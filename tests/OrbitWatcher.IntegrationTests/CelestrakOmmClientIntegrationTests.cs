@@ -6,8 +6,8 @@ namespace OrbitWatcher.IntegrationTests;
 
 public class CelestrakOmmClientIntegrationTests
 {
-    [Fact]
-    public async Task RefreshAsync_DownloadsNonEmptyOmmPayload()
+    [Fact(Skip = "Requires outbound network access to celestrak.org.")]
+    public async Task RefreshAsync_WithRealCelestrakApi_DownloadsNonEmptyOmmPayload()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection()
@@ -19,15 +19,7 @@ public class CelestrakOmmClientIntegrationTests
         using var provider = services.BuildServiceProvider();
         var cache = provider.GetRequiredService<IOmmDataCache>();
 
-        string payload;
-        try
-        {
-            payload = await cache.RefreshAsync();
-        }
-        catch (HttpRequestException)
-        {
-            return;
-        }
+        var payload = await cache.RefreshAsync();
 
         Assert.False(string.IsNullOrWhiteSpace(payload));
         Assert.True(HasExpectedOmmMarker(payload));

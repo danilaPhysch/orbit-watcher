@@ -1,6 +1,6 @@
 namespace OrbitWatcher.Celestrak;
 
-public sealed class InMemoryOmmDataCache(ICelestrakOmmClient client) : IOmmDataCache
+public sealed class InMemoryOmmDataCache(ICelestrakOmmClient client) : IOmmDataCache, IDisposable
 {
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
     private string? _rawOmm;
@@ -23,5 +23,10 @@ public sealed class InMemoryOmmDataCache(ICelestrakOmmClient client) : IOmmDataC
         {
             _refreshLock.Release();
         }
+    }
+
+    public void Dispose()
+    {
+        _refreshLock.Dispose();
     }
 }

@@ -14,7 +14,7 @@ public sealed class CelestrakOmmClient(HttpClient httpClient, IOptions<Celestrak
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         if (string.IsNullOrWhiteSpace(content))
         {
-            throw new InvalidOperationException("CelesTrak returned an empty OMM payload.");
+            throw new InvalidOperationException("Celestrak returned an empty OMM payload.");
         }
 
         return content;
