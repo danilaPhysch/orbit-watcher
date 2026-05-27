@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/OrbitWatcher/OrbitWatcher.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OrbitWatcher.IntegrationTests/OrbitWatcher.IntegrationTests.csproj" />
+  </Folder>
 </Solution>
