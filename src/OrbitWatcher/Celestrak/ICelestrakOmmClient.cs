@@ -2,5 +2,5 @@ namespace OrbitWatcher.Celestrak;
 
 public interface ICelestrakOmmClient
 {
-    Task<string> DownloadOmmAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<OmmRecord>> DownloadOmmsAsync(CancellationToken cancellationToken = default);
 }

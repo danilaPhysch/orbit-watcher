@@ -10,7 +10,7 @@ public sealed class CelestrakOmmOptions
     public string BaseUrl { get; set; } = "https://celestrak.org";
 
     [Required]
-    public string EndpointPath { get; set; } = "NORAD/elements/gp.php?GROUP=active&FORMAT=XML";
+    public string RelativeUri { get; set; } = "NORAD/elements/gp.php?GROUP=active&FORMAT=JSON";
 
     [Range(1, 300)]
     public int TimeoutSeconds { get; set; } = 30;

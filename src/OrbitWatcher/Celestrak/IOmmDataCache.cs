@@ -2,7 +2,7 @@ namespace OrbitWatcher.Celestrak;
 
 public interface IOmmDataCache
 {
-    string? RawOmm { get; }
+    IReadOnlyCollection<OmmRecord> Omms { get; }
     DateTimeOffset? LastRefreshUtc { get; }
-    Task<string> RefreshAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<OmmRecord>> RefreshAsync(CancellationToken cancellationToken = default);
 }

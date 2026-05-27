@@ -3,21 +3,21 @@ namespace OrbitWatcher.Celestrak;
 public sealed class InMemoryOmmDataCache(ICelestrakOmmClient client) : IOmmDataCache, IDisposable
 {
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
-    private string? _rawOmm;
+    private IReadOnlyCollection<OmmRecord> _omms = [];
     private DateTimeOffset? _lastRefreshUtc;
 
-    public string? RawOmm => _rawOmm;
+    public IReadOnlyCollection<OmmRecord> Omms => _omms;
     public DateTimeOffset? LastRefreshUtc => _lastRefreshUtc;
 
-    public async Task<string> RefreshAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<OmmRecord>> RefreshAsync(CancellationToken cancellationToken = default)
     {
         await _refreshLock.WaitAsync(cancellationToken);
         try
         {
-            var omm = await client.DownloadOmmAsync(cancellationToken);
-            _rawOmm = omm;
+            var omms = await client.DownloadOmmsAsync(cancellationToken);
+            _omms = omms;
             _lastRefreshUtc = DateTimeOffset.UtcNow;
-            return omm;
+            return omms;
         }
         finally
         {
