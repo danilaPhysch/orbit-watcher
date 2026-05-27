@@ -5,6 +5,11 @@ namespace OrbitWatcher.Celestrak;
 
 public sealed class CelestrakOmmClient(HttpClient httpClient, IOptions<CelestrakOmmOptions> options) : ICelestrakOmmClient
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public async Task<IReadOnlyCollection<OmmRecord>> DownloadOmmsAsync(CancellationToken cancellationToken = default)
     {
         var baseUri = new Uri(options.Value.BaseUrl);
@@ -27,7 +32,7 @@ public sealed class CelestrakOmmClient(HttpClient httpClient, IOptions<Celestrak
             throw new InvalidOperationException("Celestrak returned an empty OMM payload.");
         }
 
-        var records = JsonSerializer.Deserialize<List<OmmRecord>>(content);
+        var records = JsonSerializer.Deserialize<List<OmmRecord>>(content, JsonOptions);
         if (records is null || records.Count == 0)
         {
             throw new InvalidOperationException("Celestrak returned no OMM records.");
