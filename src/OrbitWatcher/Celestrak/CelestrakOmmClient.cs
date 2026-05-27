@@ -9,7 +9,14 @@ public sealed class CelestrakOmmClient(HttpClient httpClient, IOptions<Celestrak
         var endpointPath = options.Value.EndpointPath;
 
         using var response = await httpClient.GetAsync(endpointPath, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new HttpRequestException(
+                $"Celestrak OMM request failed with status {(int)response.StatusCode} ({response.ReasonPhrase}). Response: {errorBody}",
+                null,
+                response.StatusCode);
+        }
 
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         if (string.IsNullOrWhiteSpace(content))
