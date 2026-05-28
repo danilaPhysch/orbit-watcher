@@ -17,7 +17,7 @@ public sealed class SatelliteStorage
 
     public IReadOnlyCollection<Satellite> GetAllSnapshot()
     {
-        return Volatile.Read(ref _snapshot).Satellites;
+        return Array.AsReadOnly(Volatile.Read(ref _snapshot).Satellites);
     }
 
     public void ReplaceAll(IEnumerable<KeyValuePair<uint, Satellite>> satellitesByNoradCatId)
