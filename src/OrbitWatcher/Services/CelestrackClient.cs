@@ -3,12 +3,10 @@ using SGPdotNET.Parsers;
 
 namespace OrbitWatcher.Services;
 
-public sealed class CelestrackClient(
-    HttpClient httpClient,
-    CelestrackSettings celestrackSettings,
-    ILogger<CelestrackClient> logger) : ICelestrackClient
+public sealed class CelestrackClient(HttpClient httpClient, CelestrackSettings celestrackSettings, ILogger<CelestrackClient> logger)
+    : ICelestrackClient
 {
-    private static readonly OmmJsonParser Parser = new();
+    private static readonly OmmJsonParser _parser = new();
 
     public async Task<IReadOnlyCollection<OmmData>> DownloadOmm(CancellationToken cancellationToken)
     {
@@ -26,12 +24,13 @@ public sealed class CelestrackClient(
                     "Failed to download OMM data from {Uri}. Status code: {StatusCode}. Response body: {ResponseBody}",
                     uri,
                     response.StatusCode,
-                    errorBody);
+                    errorBody
+                );
                 continue;
             }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            output.AddRange(Parser.Parse(content));
+            output.AddRange(_parser.Parse(content));
         }
 
         return output;

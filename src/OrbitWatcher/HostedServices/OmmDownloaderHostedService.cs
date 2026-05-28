@@ -9,7 +9,8 @@ public sealed class OmmDownloaderHostedService(
     ICelestrackClient celestrackClient,
     OmmLoadingSettings settings,
     SatelliteStorage satelliteStorage,
-    ILogger<OmmDownloaderHostedService> logger) : BackgroundService
+    ILogger<OmmDownloaderHostedService> logger
+) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -38,7 +39,8 @@ public sealed class OmmDownloaderHostedService(
                     {
                         logger.LogWarning(
                             "OMM download contains duplicate NORAD catalog ID '{NoradCatId}'. Keeping the first occurrence and ignoring subsequent duplicates.",
-                            omm.NoradCatID);
+                            omm.NoradCatID
+                        );
                         continue;
                     }
 
@@ -47,9 +49,7 @@ public sealed class OmmDownloaderHostedService(
 
                 satelliteStorage.ReplaceAll(satellitesByNoradCatId);
 
-                logger.LogInformation(
-                    "Successfully updated in-memory satellite snapshot. Satellites: {Count}",
-                    satelliteStorage.Count);
+                logger.LogInformation("Successfully updated in-memory satellite snapshot. Satellites: {Count}", satelliteStorage.Count);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

@@ -37,7 +37,7 @@ public sealed class SatelliteStorage
 
         public ImmutableDictionary<uint, Satellite> SatellitesByNorad { get; } = satellitesByNorad;
 
-        public Satellite[] Satellites { get; } = [..satellitesByNorad.Values];
+        public Satellite[] Satellites { get; } = [.. satellitesByNorad.Values];
 
         public int Count => SatellitesByNorad.Count;
     }

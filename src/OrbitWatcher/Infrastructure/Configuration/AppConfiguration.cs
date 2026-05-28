@@ -4,10 +4,8 @@ public static class AppConfiguration
 {
     public static void RegisterSettings(this IServiceCollection services, IConfiguration configuration)
     {
-        var ommLoadingSettings = ValidateOmmLoadingSettings(
-            configuration.GetSettings<OmmLoadingSettings>("OmmLoading"));
-        var celestrackSettings = ValidateCelestrackSettings(
-            configuration.GetSettings<CelestrackSettings>("Celestrack"));
+        var ommLoadingSettings = ValidateOmmLoadingSettings(configuration.GetSettings<OmmLoadingSettings>("OmmLoading"));
+        var celestrackSettings = ValidateCelestrackSettings(configuration.GetSettings<CelestrackSettings>("Celestrack"));
 
         services.AddSingleton(ommLoadingSettings);
         services.AddSingleton(celestrackSettings);
@@ -23,7 +21,8 @@ public static class AppConfiguration
         if (settings.ExecuteInterval <= TimeSpan.Zero)
         {
             throw new InvalidOperationException(
-                "Configuration section 'OmmLoading' is invalid: 'ExecuteInterval' must be greater than 00:00:00.");
+                "Configuration section 'OmmLoading' is invalid: 'ExecuteInterval' must be greater than 00:00:00."
+            );
         }
 
         return settings;
@@ -39,7 +38,8 @@ public static class AppConfiguration
         if (settings.RelativeUris is null || !settings.RelativeUris.Any())
         {
             throw new InvalidOperationException(
-                "Configuration section 'Celestrack' is invalid: 'RelativeUris' must contain at least one value.");
+                "Configuration section 'Celestrack' is invalid: 'RelativeUris' must contain at least one value."
+            );
         }
 
         return settings;
