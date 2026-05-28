@@ -9,10 +9,10 @@ public sealed class SatelliteStorage
 
     public int Count => Volatile.Read(ref _snapshot).Count;
 
-    public bool TryGetByNoradCatId(uint noradCatId, out Satellite satellite)
+    public bool TryGetByNoradCatId(uint noradCatId, out Satellite? satellite)
     {
         var snapshot = Volatile.Read(ref _snapshot);
-        return snapshot.SatellitesByNorad.TryGetValue(noradCatId, out satellite!);
+        return snapshot.SatellitesByNorad.TryGetValue(noradCatId, out satellite);
     }
 
     public IReadOnlyCollection<Satellite> GetAllSnapshot()
