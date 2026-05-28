@@ -36,11 +36,15 @@ public sealed class OmmDownloaderHostedService(
                     var satellitesByNoradCatId = new Dictionary<uint, Satellite>(ommData.Count);
                     foreach (var omm in ommData)
                     {
-                        if (!satellitesByNoradCatId.TryAdd(omm.NoradCatID, new Satellite(omm)))
+                        if (satellitesByNoradCatId.ContainsKey(omm.NoradCatID))
                         {
-                            throw new InvalidOperationException(
-                                $"OMM download contains duplicate NORAD catalog ID '{omm.NoradCatID}'.");
+                            logger.LogWarning(
+                                "OMM download contains duplicate NORAD catalog ID '{NoradCatId}'. Keeping the first occurrence and ignoring subsequent duplicates.",
+                                omm.NoradCatID);
+                            continue;
                         }
+
+                        satellitesByNoradCatId.Add(omm.NoradCatID, new Satellite(omm));
                     }
 
                     satelliteStorage.ReplaceAll(satellitesByNoradCatId);
