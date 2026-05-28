@@ -33,9 +33,11 @@ public sealed class OmmDownloaderHostedService(
                         continue;
                     }
 
-                    var satellites = ommData.Select(omm => new Satellite(omm)).ToList();
+                    var satellitesByNoradCatId = ommData.ToDictionary(
+                        omm => omm.NoradCatID,
+                        omm => new Satellite(omm));
 
-                    satelliteStorage.ReplaceAll(satellites);
+                    satelliteStorage.ReplaceAll(satellitesByNoradCatId);
 
                     logger.LogInformation(
                         "Successfully updated in-memory satellite snapshot. Satellites: {Count}",
