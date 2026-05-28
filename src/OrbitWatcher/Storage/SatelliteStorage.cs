@@ -1,16 +1,10 @@
 using System.Collections.Immutable;
-using System.Threading;
 using SGPdotNET.Observation;
 
 namespace OrbitWatcher.Storage;
 
-/// <summary>
-/// In-memory snapshot storage optimized for frequent reads (e.g. per-second SignalR streaming)
-/// and infrequent writes (e.g. daily ephemeris refresh).
-/// </summary>
 public sealed class SatelliteStorage
 {
-    // Atomic reference swap (rare writes). Readers take a snapshot reference (frequent reads).
     private SatelliteSnapshot _snapshot = SatelliteSnapshot.Empty;
 
     public int Count => Volatile.Read(ref _snapshot).Count;
@@ -37,19 +31,13 @@ public sealed class SatelliteStorage
         Volatile.Write(ref _snapshot, new SatelliteSnapshot(builder.ToImmutable()));
     }
 
-    private sealed class SatelliteSnapshot
+    private sealed class SatelliteSnapshot(ImmutableDictionary<uint, Satellite> satellitesByNorad)
     {
         public static SatelliteSnapshot Empty { get; } = new(ImmutableDictionary<uint, Satellite>.Empty);
 
-        public SatelliteSnapshot(ImmutableDictionary<uint, Satellite> satellitesByNorad)
-        {
-            SatellitesByNorad = satellitesByNorad;
-            Satellites = [..satellitesByNorad.Values];
-        }
+        public ImmutableDictionary<uint, Satellite> SatellitesByNorad { get; } = satellitesByNorad;
 
-        public ImmutableDictionary<uint, Satellite> SatellitesByNorad { get; }
-
-        public Satellite[] Satellites { get; }
+        public Satellite[] Satellites { get; } = [..satellitesByNorad.Values];
 
         public int Count => SatellitesByNorad.Count;
     }

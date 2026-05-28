@@ -19,7 +19,7 @@ public sealed class OmmDownloaderHostedService(
 
         try
         {
-            while (await timer.WaitForNextTickAsync(stoppingToken))
+            do
             {
                 try
                 {
@@ -33,9 +33,15 @@ public sealed class OmmDownloaderHostedService(
                         continue;
                     }
 
-                    var satellitesByNoradCatId = ommData.ToDictionary(
-                        omm => omm.NoradCatID,
-                        omm => new Satellite(omm));
+                    var satellitesByNoradCatId = new Dictionary<uint, Satellite>(ommData.Count);
+                    foreach (var omm in ommData)
+                    {
+                        if (!satellitesByNoradCatId.TryAdd(omm.NoradCatID, new Satellite(omm)))
+                        {
+                            throw new InvalidOperationException(
+                                $"OMM download contains duplicate NORAD catalog ID '{omm.NoradCatID}'.");
+                        }
+                    }
 
                     satelliteStorage.ReplaceAll(satellitesByNoradCatId);
 
@@ -53,7 +59,7 @@ public sealed class OmmDownloaderHostedService(
                 {
                     logger.LogError(ex, "An error occurred while fetching OMM data. Keeping previous in-memory snapshot.");
                 }
-            }
+            } while (await timer.WaitForNextTickAsync(stoppingToken));
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {

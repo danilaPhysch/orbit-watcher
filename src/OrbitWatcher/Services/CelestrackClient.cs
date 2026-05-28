@@ -8,7 +8,7 @@ public sealed class CelestrackClient(
     CelestrackSettings celestrackSettings,
     ILogger<CelestrackClient> logger) : ICelestrackClient
 {
-    private static readonly OmmJsonParser _parser = new();
+    private static readonly OmmJsonParser Parser = new();
 
     public async Task<IReadOnlyCollection<OmmData>> DownloadOmm(CancellationToken cancellationToken)
     {
@@ -31,7 +31,7 @@ public sealed class CelestrackClient(
             }
 
             var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            output.AddRange(_parser.Parse(content));
+            output.AddRange(Parser.Parse(content));
         }
 
         return output;
