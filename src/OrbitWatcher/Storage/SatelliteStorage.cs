@@ -1,20 +1,41 @@
-using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Threading;
 using SGPdotNET.Observation;
 
 namespace OrbitWatcher.Storage;
 
-public class SatelliteStorage
+/// <summary>
+/// In-memory snapshot storage optimized for frequent reads (e.g. per-second SignalR streaming)
+/// and infrequent writes (e.g. daily ephemeris refresh).
+/// </summary>
+public sealed class SatelliteStorage
 {
-    private readonly ConcurrentDictionary<string, Satellite> _satellites = new();
+    // Atomic reference swap (rare writes). Readers take a snapshot reference (frequent reads).
+    private ImmutableDictionary<int, Satellite> _satellitesByNorad = ImmutableDictionary<int, Satellite>.Empty;
 
-    public void AddOrUpdate(IList<Satellite> satellites)
+    public int Count => Volatile.Read(ref _satellitesByNorad).Count;
+
+    public bool TryGetByNoradCatId(int noradCatId, out Satellite satellite)
     {
-        foreach (var satellite in satellites)
-            _satellites[satellite.Name] = satellite;
+        var snapshot = Volatile.Read(ref _satellitesByNorad);
+        return snapshot.TryGetValue(noradCatId, out satellite!);
     }
 
-    public IReadOnlyList<Satellite> GetAll() => _satellites.Values.ToList();
+    public IReadOnlyCollection<Satellite> GetAllSnapshot()
+    {
+        // Returns a stable snapshot view without additional allocations.
+        var snapshot = Volatile.Read(ref _satellitesByNorad);
+        return snapshot.Values;
+    }
 
-    public Satellite? GetByName(string name) =>
-        _satellites.GetValueOrDefault(name);
+    public void ReplaceAll(IEnumerable<Satellite> satellites)
+    {
+        var builder = ImmutableDictionary.CreateBuilder<int, Satellite>();
+        foreach (var satellite in satellites)
+        {
+            builder[satellite.OmmData.NoradCatId] = satellite;
+        }
+
+        Volatile.Write(ref _satellitesByNorad, builder.ToImmutable());
+    }
 }
