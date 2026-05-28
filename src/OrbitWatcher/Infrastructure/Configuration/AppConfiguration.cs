@@ -6,9 +6,13 @@ public static class AppConfiguration
     {
         var ommLoadingSettings = ValidateOmmLoadingSettings(configuration.GetSettings<OmmLoadingSettings>("OmmLoading"));
         var celestrackSettings = ValidateCelestrackSettings(configuration.GetSettings<CelestrackSettings>("Celestrack"));
+        var satelliteStreamingSettings = ValidateSatelliteStreamingSettings(
+            configuration.GetSettings<SatelliteStreamingSettings>("SatelliteStreaming")
+        );
 
         services.AddSingleton(ommLoadingSettings);
         services.AddSingleton(celestrackSettings);
+        services.AddSingleton(satelliteStreamingSettings);
     }
 
     private static OmmLoadingSettings ValidateOmmLoadingSettings(OmmLoadingSettings? settings)
@@ -39,6 +43,23 @@ public static class AppConfiguration
         {
             throw new InvalidOperationException(
                 "Configuration section 'Celestrack' is invalid: 'RelativeUris' must contain at least one value."
+            );
+        }
+
+        return settings;
+    }
+
+    private static SatelliteStreamingSettings ValidateSatelliteStreamingSettings(SatelliteStreamingSettings? settings)
+    {
+        if (settings is null)
+        {
+            throw new InvalidOperationException("Configuration section 'SatelliteStreaming' is missing or invalid.");
+        }
+
+        if (settings.ExecuteInterval <= TimeSpan.Zero)
+        {
+            throw new InvalidOperationException(
+                "Configuration section 'SatelliteStreaming' is invalid: 'ExecuteInterval' must be greater than 00:00:00."
             );
         }
 
