@@ -117,13 +117,13 @@
 2. Запустить сервер:
 
 ```bash
-dotnet run --project /tmp/workspace/danilaPhysch/orbit-watcher/src/OrbitWatcher
+dotnet run --project src/OrbitWatcher
 ```
 
 3. В отдельном терминале запустить тестовый клиент (проект в `tests/OrbitWatcher.SignalRClient`):
 
 ```bash
-dotnet run --project /tmp/workspace/danilaPhysch/orbit-watcher/tests/OrbitWatcher.SignalRClient
+dotnet run --project tests/OrbitWatcher.SignalRClient
 ```
 
 Клиент подключается к `/hubs/satellites`, логирует каждый пакет `satellitePositions`, корректно пишет ошибки соединения и попытки reconnect.
