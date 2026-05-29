@@ -104,6 +104,7 @@
 ## Roadmap (кратко)
 
 - [x] SignalR Hub + стрим координат раз в секунду
+- [x] Blazor-клиент c live-таблицей позиций через SignalR
 - [ ] Blazor-карта с обновляемыми маркерами
 - [ ] Траектория (ground track) на ±0.5 витка
 - [ ] UI: tooltip/popup с данными спутника
@@ -127,6 +128,24 @@ dotnet run --project tests/OrbitWatcher.SignalRClient
 ```
 
 Клиент подключается к `/hubs/satellites`, логирует каждый пакет `satellitePositions`, корректно пишет ошибки соединения и попытки reconnect.
+
+## Запуск Blazor WebAssembly клиента
+
+1. Убедиться, что сервер запущен на `http://localhost:5000`.
+2. Запустить клиент:
+
+```bash
+dotnet run --project src/OrbitWatcher.Client
+```
+
+Клиент показывает страницу `/satellites` с live-таблицей спутников и статусом SignalR-соединения.
+
+Конфигурация клиента находится в `src/OrbitWatcher.Client/wwwroot/appsettings.json`:
+- `SignalRClient:HubBaseUrl` (по умолчанию `http://localhost:5000`)
+- `SignalRClient:HubPath` (по умолчанию `/hubs/satellites`)
+- `SignalRClient:EventName` (по умолчанию `satellitePositions`)
+
+Для разработки на сервере включён CORS policy `ClientDevelopment`, разрешающий `localhost` origins.
 
 ---
 
