@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OrbitWatcher.Contracts;
 
 var builder = Host.CreateApplicationBuilder(
     new HostApplicationBuilderSettings
@@ -185,12 +186,3 @@ internal sealed record SatelliteSignalRClientSettings
     public int MinBatchesToLog { get; init; } = 10;
     public TimeSpan ReconnectDelay { get; init; } = TimeSpan.FromSeconds(5);
 }
-
-internal sealed record SatellitePositionDto(
-    uint NoradCatId,
-    string Name,
-    DateTime TimestampUtc,
-    double Lat,
-    double Lon,
-    double AltKm
-);

@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/OrbitWatcher/OrbitWatcher.csproj" />
+    <Project Path="src/OrbitWatcher.Contracts/OrbitWatcher.Contracts.csproj" />
+    <Project Path="src/OrbitWatcher.Client/OrbitWatcher.Client.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/OrbitWatcher.SignalRClient/OrbitWatcher.SignalRClient.csproj" />

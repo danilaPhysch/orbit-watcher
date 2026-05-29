@@ -1,0 +1,72 @@
+@page "/"
+@page "/satellites"
+@implements IDisposable
+@inject OrbitWatcher.Client.Services.SatellitePositionsStream Stream
+
+<PageTitle>Satellites</PageTitle>
+
+<h1>Satellite positions</h1>
+
+<p><strong>Connection:</strong> @Stream.Status</p>
+<p><strong>Last update (UTC):</strong> @(Stream.LastUpdateUtc?.ToString("O") ?? "—")</p>
+
+@if (!string.IsNullOrWhiteSpace(Stream.LastError))
+{
+    <p class="text-danger"><strong>Error:</strong> @Stream.LastError</p>
+}
+
+<table class="table">
+    <thead>
+    <tr>
+        <th>NoradCatId</th>
+        <th>Name</th>
+        <th>Lat</th>
+        <th>Lon</th>
+        <th>AltKm</th>
+        <th>TimestampUtc</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var satellite in _satellites.Values.OrderBy(x => x.NoradCatId))
+    {
+        <tr>
+            <td>@satellite.NoradCatId</td>
+            <td>@satellite.Name</td>
+            <td>@satellite.Lat.ToString("F6")</td>
+            <td>@satellite.Lon.ToString("F6")</td>
+            <td>@satellite.AltKm.ToString("F2")</td>
+            <td>@satellite.TimestampUtc.ToString("O")</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@code {
+    private readonly Dictionary<uint, OrbitWatcher.Contracts.SatellitePositionDto> _satellites = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Stream.PositionsReceived += OnPositionsReceived;
+        Stream.StatusChanged += OnStatusChanged;
+
+        await Stream.StartAsync();
+    }
+
+    private void OnPositionsReceived(IReadOnlyCollection<OrbitWatcher.Contracts.SatellitePositionDto> positions)
+    {
+        foreach (var satellite in positions)
+        {
+            _satellites[satellite.NoradCatId] = satellite;
+        }
+
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnStatusChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Stream.PositionsReceived -= OnPositionsReceived;
+        Stream.StatusChanged -= OnStatusChanged;
+    }
+}
