@@ -54,16 +54,16 @@
    - формирует словарь спутников по `NORAD Catalog ID`
    - заменяет snapshot целиком (атомарно), чтобы читатели всегда видели согласованное состояние
 
-2. `SatelliteStreamerHostedService` (планируемый компонент):
+2. `SatelliteStreamerHostedService`:
    - раз в 1 секунду берёт snapshot спутников
    - считает positions на `DateTime.UtcNow`
    - отправляет пакет координат в SignalR (broadcast всем клиентам)
 
 ---
 
-## Формат сообщений (план / будет уточняться)
+## Формат сообщений
 
-Сервер отправляет событие (например) `satellitePositions`, payload примерно такого вида:
+Сервер отправляет событие `satellitePositions` (hub: `/hubs/satellites`), payload:
 
 ```json
 [
@@ -78,17 +78,12 @@
 ]
 ```
 
-Примечания:
-- В MVP можно начать с минимального набора полей: `noradCatId`, `lat`, `lon`, `timestampUtc`.
-- `name`, `altKm`, скорость и др. — можно добавлять постепенно, когда фронт будет готов.
-
----
-
 ## Конфигурация
 
-Ожидаются секции конфигурации (appsettings.*):
+Используются секции конфигурации (appsettings.*):
 
 - `OmmLoading:ExecuteInterval` — период скачивания OMM (например, раз в 10–60 минут).
+- `SatelliteStreaming:ExecuteInterval` — период стриминга в SignalR (по умолчанию `00:00:01`).
 - `Celestrack:BaseUri` — базовый URL CelesTrak.
 - `Celestrack:RelativeUris` — список путей (наборы данных), которые нужно скачивать (в MVP — GNSS).
 
@@ -108,11 +103,30 @@
 
 ## Roadmap (кратко)
 
-- [ ] SignalR Hub + стрим координат раз в секунду
+- [x] SignalR Hub + стрим координат раз в секунду
 - [ ] Blazor-карта с обновляемыми маркерами
 - [ ] Траектория (ground track) на ±0.5 витка
 - [ ] UI: tooltip/popup с данными спутника
 - [ ] (Позже) фильтры/подписки: стримить не всех, а только выбранные группы/спутники
+
+---
+
+## Запуск сервера и тестового SignalR клиента
+
+1. Скопировать `src/OrbitWatcher/appsettings.Development.example.json` в `src/OrbitWatcher/appsettings.Development.json` и при необходимости скорректировать `Celestrack`.
+2. Запустить сервер:
+
+```bash
+dotnet run --project src/OrbitWatcher
+```
+
+3. В отдельном терминале запустить тестовый клиент (проект в `tests/OrbitWatcher.SignalRClient`):
+
+```bash
+dotnet run --project tests/OrbitWatcher.SignalRClient
+```
+
+Клиент подключается к `/hubs/satellites`, логирует каждый пакет `satellitePositions`, корректно пишет ошибки соединения и попытки reconnect.
 
 ---
 
