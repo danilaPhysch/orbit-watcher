@@ -8,7 +8,7 @@
     public IReadOnlyCollection<OrbitWatcher.Contracts.SatellitePositionDto> Satellites { get; set; } = [];
 
     [Parameter]
-    public string MapId { get; set; } = $"satellite-map-{Guid.NewGuid():N}";
+    public string? MapId { get; set; }
 
     [Parameter]
     public double CenterLat { get; set; } = 15;
@@ -21,6 +21,14 @@
 
     private ElementReference _mapElement;
     private bool _isInitialized;
+    private string _resolvedMapId = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _resolvedMapId = string.IsNullOrWhiteSpace(MapId)
+            ? $"satellite-map-{Guid.NewGuid():N}"
+            : MapId;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -29,7 +37,7 @@
             return;
         }
 
-        await MapInterop.InitializeAsync(MapId, _mapElement, CenterLat, CenterLon, Zoom);
+        await MapInterop.InitializeAsync(_resolvedMapId, _mapElement, CenterLat, CenterLon, Zoom);
         _isInitialized = true;
         await SyncMarkersAsync();
     }
@@ -46,8 +54,15 @@
 
     private async Task SyncMarkersAsync()
     {
-        await MapInterop.UpsertMarkersAsync(MapId, Satellites);
-        await MapInterop.RemoveMarkersExceptAsync(MapId, Satellites.Select(x => x.NoradCatId).ToArray());
+        var snapshot = Satellites as OrbitWatcher.Contracts.SatellitePositionDto[] ?? Satellites.ToArray();
+        var noradIds = new uint[snapshot.Length];
+        for (var i = 0; i < snapshot.Length; i++)
+        {
+            noradIds[i] = snapshot[i].NoradCatId;
+        }
+
+        await MapInterop.UpsertMarkersAsync(_resolvedMapId, snapshot);
+        await MapInterop.RemoveMarkersExceptAsync(_resolvedMapId, noradIds);
     }
 
     public async ValueTask DisposeAsync()
@@ -57,6 +72,6 @@
             return;
         }
 
-        await MapInterop.DisposeMapAsync(MapId);
+        await MapInterop.DisposeMapAsync(_resolvedMapId);
     }
 }
