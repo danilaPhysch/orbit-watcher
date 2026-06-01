@@ -1,0 +1,62 @@
+@implements IAsyncDisposable
+@inject OrbitWatcher.Client.Services.LeafletMapInterop MapInterop
+
+<div class="satellite-map" @ref="_mapElement"></div>
+
+@code {
+    [Parameter]
+    public IReadOnlyCollection<OrbitWatcher.Contracts.SatellitePositionDto> Satellites { get; set; } = [];
+
+    [Parameter]
+    public string MapId { get; set; } = $"satellite-map-{Guid.NewGuid():N}";
+
+    [Parameter]
+    public double CenterLat { get; set; } = 15;
+
+    [Parameter]
+    public double CenterLon { get; set; }
+
+    [Parameter]
+    public int Zoom { get; set; } = 2;
+
+    private ElementReference _mapElement;
+    private bool _isInitialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await MapInterop.InitializeAsync(MapId, _mapElement, CenterLat, CenterLon, Zoom);
+        _isInitialized = true;
+        await SyncMarkersAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        await SyncMarkersAsync();
+    }
+
+    private async Task SyncMarkersAsync()
+    {
+        await MapInterop.UpsertMarkersAsync(MapId, Satellites);
+        await MapInterop.RemoveMarkersExceptAsync(MapId, Satellites.Select(x => x.NoradCatId).ToArray());
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        await MapInterop.DisposeMapAsync(MapId);
+    }
+}
