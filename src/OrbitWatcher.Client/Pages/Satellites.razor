@@ -24,6 +24,7 @@
         <th>Lon</th>
         <th>AltKm</th>
         <th>TimestampUtc</th>
+        <th>Actions</th>
     </tr>
     </thead>
     <tbody>
@@ -36,6 +37,9 @@
             <td>@satellite.Lon.ToString("F6")</td>
             <td>@satellite.AltKm.ToString("F2")</td>
             <td>@satellite.TimestampUtc.ToString("O")</td>
+            <td>
+                <a class="btn btn-outline-primary btn-sm" href="/map?selectedId=@satellite.NoradCatId">Show on Map</a>
+            </td>
         </tr>
     }
     </tbody>

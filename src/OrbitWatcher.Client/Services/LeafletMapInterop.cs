@@ -8,10 +8,10 @@ public sealed class LeafletMapInterop(IJSRuntime jsRuntime) : IAsyncDisposable
 {
     private IJSObjectReference? _module;
 
-    public async ValueTask InitializeAsync(string mapId, ElementReference mapElement, double centerLat, double centerLon, int zoom)
+    public async ValueTask InitializeAsync(string mapId, ElementReference mapElement, double centerLat, double centerLon, int zoom, object? dotNetRef = null)
     {
         var module = await GetModuleAsync();
-        await module.InvokeVoidAsync("initializeMap", mapId, mapElement, centerLat, centerLon, zoom);
+        await module.InvokeVoidAsync("initializeMap", mapId, mapElement, centerLat, centerLon, zoom, dotNetRef);
     }
 
     public async ValueTask UpsertMarkersAsync(string mapId, IReadOnlyCollection<SatellitePositionDto> positions)
@@ -24,6 +24,18 @@ public sealed class LeafletMapInterop(IJSRuntime jsRuntime) : IAsyncDisposable
     {
         var module = await GetModuleAsync();
         await module.InvokeVoidAsync("removeMarkersExcept", mapId, noradIds);
+    }
+
+    public async ValueTask DrawGroundTrackAsync(string mapId, GroundTrackDto groundTrack)
+    {
+        var module = await GetModuleAsync();
+        await module.InvokeVoidAsync("drawGroundTrack", mapId, groundTrack);
+    }
+
+    public async ValueTask ClearGroundTrackAsync(string mapId)
+    {
+        var module = await GetModuleAsync();
+        await module.InvokeVoidAsync("clearGroundTrack", mapId);
     }
 
     public async ValueTask DisposeMapAsync(string mapId)

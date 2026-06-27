@@ -19,9 +19,19 @@
     [Parameter]
     public int Zoom { get; set; } = 2;
 
+    [Parameter]
+    public uint? ActiveSatelliteId { get; set; }
+
+    [Parameter]
+    public EventCallback<uint?> ActiveSatelliteIdChanged { get; set; }
+
+    [Parameter]
+    public OrbitWatcher.Contracts.GroundTrackDto? GroundTrack { get; set; }
+
     private ElementReference _mapElement;
     private bool _isInitialized;
     private string _resolvedMapId = string.Empty;
+    private DotNetObjectReference<SatelliteMap>? _objRef;
 
     protected override void OnInitialized()
     {
@@ -37,9 +47,11 @@
             return;
         }
 
-        await MapInterop.InitializeAsync(_resolvedMapId, _mapElement, CenterLat, CenterLon, Zoom);
+        _objRef = DotNetObjectReference.Create(this);
+        await MapInterop.InitializeAsync(_resolvedMapId, _mapElement, CenterLat, CenterLon, Zoom, _objRef);
         _isInitialized = true;
         await SyncMarkersAsync();
+        await SyncGroundTrackAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -50,6 +62,13 @@
         }
 
         await SyncMarkersAsync();
+        await SyncGroundTrackAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnSatelliteSelected(uint noradCatId)
+    {
+        await ActiveSatelliteIdChanged.InvokeAsync(noradCatId);
     }
 
     private async Task SyncMarkersAsync()
@@ -65,8 +84,21 @@
         await MapInterop.RemoveMarkersExceptAsync(_resolvedMapId, noradIds);
     }
 
+    private async Task SyncGroundTrackAsync()
+    {
+        if (GroundTrack is not null && GroundTrack.NoradCatId == ActiveSatelliteId)
+        {
+            await MapInterop.DrawGroundTrackAsync(_resolvedMapId, GroundTrack);
+        }
+        else
+        {
+            await MapInterop.ClearGroundTrackAsync(_resolvedMapId);
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
+        _objRef?.Dispose();
         if (!_isInitialized)
         {
             return;

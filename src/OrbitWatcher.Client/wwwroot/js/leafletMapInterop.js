@@ -23,7 +23,7 @@ function buildPopupContent(satellite) {
     return `<strong>${name}</strong><br/>NORAD: ${noradCatId}<br/>Lat: ${formatNumber(lat, 6)}<br/>Lon: ${formatNumber(lon, 6)}<br/>Alt (km): ${formatNumber(altKm, 2)}<br/>UTC: ${timestampUtc}`;
 }
 
-export function initializeMap(mapId, element, centerLat, centerLon, zoom) {
+export function initializeMap(mapId, element, centerLat, centerLon, zoom, dotNetRef) {
     if (mapStates.has(mapId)) {
         return;
     }
@@ -39,7 +39,10 @@ export function initializeMap(mapId, element, centerLat, centerLon, zoom) {
 
     mapStates.set(mapId, {
         map,
-        markers: new Map()
+        markers: new Map(),
+        dotNetRef,
+        pastTrackLayer: null,
+        futureTrackLayer: null
     });
 
     setTimeout(() => map.invalidateSize(), 0);
@@ -67,6 +70,12 @@ export function upsertMarkers(mapId, satellites) {
             marker = L.marker([lat, lon]);
             marker.addTo(mapState.map);
             mapState.markers.set(markerKey, marker);
+
+            marker.on("click", () => {
+                if (mapState.dotNetRef) {
+                    mapState.dotNetRef.invokeMethodAsync("OnSatelliteSelected", noradCatId);
+                }
+            });
         } else {
             marker.setLatLng([lat, lon]);
         }
@@ -92,12 +101,69 @@ export function removeMarkersExcept(mapId, noradIds) {
     }
 }
 
+export function drawGroundTrack(mapId, groundTrack) {
+    const mapState = mapStates.get(mapId);
+    if (!mapState || !groundTrack) {
+        return;
+    }
+
+    clearGroundTrack(mapId);
+
+    const mapSegments = (segments) => {
+        if (!segments || !Array.isArray(segments)) return [];
+        return segments.map(segment =>
+            segment.map(pt => [
+                getPropertyValue(pt, "lat", "Lat"),
+                getPropertyValue(pt, "lon", "Lon")
+            ])
+        );
+    };
+
+    const pastSegments = mapSegments(getPropertyValue(groundTrack, "pastTrack", "PastTrack"));
+    const futureSegments = mapSegments(getPropertyValue(groundTrack, "futureTrack", "FutureTrack"));
+
+    if (pastSegments.length > 0) {
+        mapState.pastTrackLayer = L.polyline(pastSegments, {
+            color: '#1b6ec2',
+            weight: 3,
+            dashArray: '5, 8',
+            opacity: 0.6
+        }).addTo(mapState.map);
+    }
+
+    if (futureSegments.length > 0) {
+        mapState.futureTrackLayer = L.polyline(futureSegments, {
+            color: '#ff4d4f',
+            weight: 3,
+            opacity: 0.8
+        }).addTo(mapState.map);
+    }
+}
+
+export function clearGroundTrack(mapId) {
+    const mapState = mapStates.get(mapId);
+    if (!mapState) {
+        return;
+    }
+
+    if (mapState.pastTrackLayer) {
+        mapState.map.removeLayer(mapState.pastTrackLayer);
+        mapState.pastTrackLayer = null;
+    }
+
+    if (mapState.futureTrackLayer) {
+        mapState.map.removeLayer(mapState.futureTrackLayer);
+        mapState.futureTrackLayer = null;
+    }
+}
+
 export function disposeMap(mapId) {
     const mapState = mapStates.get(mapId);
     if (!mapState) {
         return;
     }
 
+    clearGroundTrack(mapId);
     mapState.map.remove();
     mapStates.delete(mapId);
 }

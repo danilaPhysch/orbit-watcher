@@ -84,6 +84,25 @@ public sealed class SatellitePositionsStream(IOptions<SatelliteSignalRSettings> 
         SetStatus(SatelliteConnectionStatus.Disconnected);
     }
 
+    public async Task<GroundTrackDto?> GetGroundTrackAsync(uint noradCatId, CancellationToken cancellationToken = default)
+    {
+        if (_connection is null || Status != SatelliteConnectionStatus.Connected)
+        {
+            return null;
+        }
+
+        try
+        {
+            return await _connection.InvokeAsync<GroundTrackDto>("GetGroundTrack", noradCatId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LastError = ex.Message;
+            NotifyStatusChanged();
+            return null;
+        }
+    }
+
     private string BuildHubUrl()
     {
         if (!string.IsNullOrWhiteSpace(_settings.HubUrl))

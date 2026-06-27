@@ -1,23 +1,91 @@
 @page "/map"
 @implements IDisposable
 @inject OrbitWatcher.Client.Services.SatellitePositionsStream Stream
+@inject NavigationManager NavigationManager
+@inject IConfiguration Configuration
 
 <PageTitle>Map</PageTitle>
 
-<h1>Satellite map</h1>
-
-<p><strong>Connection:</strong> @Stream.Status</p>
-<p><strong>Last update (UTC):</strong> @(Stream.LastUpdateUtc?.ToString("O") ?? "—")</p>
+<div class="row align-items-center mb-3">
+    <div class="col">
+        <h1>Satellite map</h1>
+        <div class="d-flex gap-3 text-muted small">
+            <span><strong>Connection:</strong> @Stream.Status</span>
+            <span><strong>Last update (UTC):</strong> @(Stream.LastUpdateUtc?.ToString("O") ?? "—")</span>
+        </div>
+    </div>
+    <div class="col-auto d-flex align-items-center gap-2">
+        <label for="satelliteSelect" class="form-label mb-0 text-nowrap">Select Satellite:</label>
+        <select id="satelliteSelect" class="form-select form-select-sm" @bind="ActiveSatelliteIdStr">
+            <option value="">-- None --</option>
+            @foreach (var sat in _satellites.Values.OrderBy(s => s.Name))
+            {
+                <option value="@sat.NoradCatId">@sat.Name (@sat.NoradCatId)</option>
+            }
+        </select>
+    </div>
+</div>
 
 @if (!string.IsNullOrWhiteSpace(Stream.LastError))
 {
-    <p class="text-danger"><strong>Error:</strong> @Stream.LastError</p>
+    <div class="alert alert-danger py-2" role="alert">
+        <strong>Error:</strong> @Stream.LastError
+    </div>
 }
 
-<SatelliteMap Satellites="_satellites.Values.ToArray()" />
+@if (_activeSatellite is not null)
+{
+    <div class="card mb-3 shadow-sm border-primary">
+        <div class="card-body py-2 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="card-title mb-0 text-primary">@_activeSatellite.Name</h5>
+                <small class="text-muted">
+                    NORAD: <strong>@_activeSatellite.NoradCatId</strong> | 
+                    Lat: <strong>@_activeSatellite.Lat.ToString("F4")°</strong> | 
+                    Lon: <strong>@_activeSatellite.Lon.ToString("F4")°</strong> | 
+                    Alt: <strong>@_activeSatellite.AltKm.ToString("F1") km</strong> | 
+                    Updated: <strong>@_activeSatellite.TimestampUtc.ToString("HH:mm:ss") UTC</strong>
+                </small>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="DeselectSatellite">Clear Track</button>
+        </div>
+    </div>
+}
+
+<div class="map-container">
+    <SatelliteMap 
+        Satellites="_satellites.Values.ToArray()" 
+        ActiveSatelliteId="_activeSatelliteId" 
+        ActiveSatelliteIdChanged="OnActiveSatelliteChanged"
+        GroundTrack="_groundTrack" />
+</div>
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "selectedId")]
+    public uint? SelectedId { get; set; }
+
     private readonly Dictionary<uint, OrbitWatcher.Contracts.SatellitePositionDto> _satellites = [];
+    private uint? _activeSatelliteId;
+    private OrbitWatcher.Contracts.SatellitePositionDto? _activeSatellite;
+    private OrbitWatcher.Contracts.GroundTrackDto? _groundTrack;
+    private CancellationTokenSource? _timerCts;
+
+    private string ActiveSatelliteIdStr
+    {
+        get => _activeSatelliteId?.ToString() ?? "";
+        set
+        {
+            if (uint.TryParse(value, out var id))
+            {
+                _ = OnActiveSatelliteChanged(id);
+            }
+            else
+            {
+                _ = OnActiveSatelliteChanged(null);
+            }
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -25,6 +93,21 @@
         Stream.StatusChanged += OnStatusChanged;
 
         await Stream.StartAsync();
+
+        if (SelectedId.HasValue)
+        {
+            await OnActiveSatelliteChanged(SelectedId.Value);
+        }
+
+        StartGroundTrackTimer();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SelectedId.HasValue && SelectedId != _activeSatelliteId)
+        {
+            await OnActiveSatelliteChanged(SelectedId.Value);
+        }
     }
 
     private void OnPositionsReceived(IReadOnlyCollection<OrbitWatcher.Contracts.SatellitePositionDto> positions)
@@ -32,6 +115,10 @@
         foreach (var satellite in positions)
         {
             _satellites[satellite.NoradCatId] = satellite;
+            if (satellite.NoradCatId == _activeSatelliteId)
+            {
+                _activeSatellite = satellite;
+            }
         }
 
         _ = InvokeAsync(StateHasChanged);
@@ -39,9 +126,85 @@
 
     private void OnStatusChanged() => _ = InvokeAsync(StateHasChanged);
 
+    private async Task OnActiveSatelliteChanged(uint? id)
+    {
+        if (_activeSatelliteId == id)
+        {
+            return;
+        }
+
+        _activeSatelliteId = id;
+        if (id.HasValue && _satellites.TryGetValue(id.Value, out var sat))
+        {
+            _activeSatellite = sat;
+        }
+        else
+        {
+            _activeSatellite = null;
+        }
+
+        await LoadGroundTrackAsync();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadGroundTrackAsync()
+    {
+        if (_activeSatelliteId.HasValue)
+        {
+            try
+            {
+                _groundTrack = await Stream.GetGroundTrackAsync(_activeSatelliteId.Value);
+            }
+            catch
+            {
+                _groundTrack = null;
+            }
+        }
+        else
+        {
+            _groundTrack = null;
+        }
+    }
+
+    private void DeselectSatellite()
+    {
+        _ = OnActiveSatelliteChanged(null);
+    }
+
+    private void StartGroundTrackTimer()
+    {
+        _timerCts?.Cancel();
+        _timerCts = new CancellationTokenSource();
+        var token = _timerCts.Token;
+
+        var intervalSec = Configuration.GetValue<int>("GroundTrack:UpdateIntervalSeconds", 60);
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(intervalSec));
+                while (await periodicTimer.WaitForNextTickAsync(token))
+                {
+                    if (_activeSatelliteId.HasValue)
+                    {
+                        await LoadGroundTrackAsync();
+                        await InvokeAsync(StateHasChanged);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Task was canceled
+            }
+        }, token);
+    }
+
     public void Dispose()
     {
         Stream.PositionsReceived -= OnPositionsReceived;
         Stream.StatusChanged -= OnStatusChanged;
+        _timerCts?.Cancel();
+        _timerCts?.Dispose();
     }
 }
