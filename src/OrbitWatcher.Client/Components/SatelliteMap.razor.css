@@ -1,0 +1,7 @@
+.satellite-map {
+    height: 70vh;
+    min-height: 420px;
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid #d2d6dc;
+}

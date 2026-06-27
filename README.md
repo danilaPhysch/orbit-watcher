@@ -105,7 +105,7 @@
 
 - [x] SignalR Hub + стрим координат раз в секунду
 - [x] Blazor-клиент c live-таблицей позиций через SignalR
-- [ ] Blazor-карта с обновляемыми маркерами
+- [x] Blazor-карта с обновляемыми маркерами
 - [ ] Траектория (ground track) на ±0.5 витка
 - [ ] UI: tooltip/popup с данными спутника
 - [ ] (Позже) фильтры/подписки: стримить не всех, а только выбранные группы/спутники
@@ -138,7 +138,9 @@ dotnet run --project tests/OrbitWatcher.SignalRClient
 dotnet run --project src/OrbitWatcher.Client
 ```
 
-Клиент показывает страницу `/satellites` с live-таблицей спутников и статусом SignalR-соединения.
+Клиент показывает:
+- страницу `/satellites` с live-таблицей спутников и статусом SignalR-соединения;
+- страницу `/map` с картой Leaflet и обновляемыми маркерами спутников.
 
 Конфигурация клиента находится в `src/OrbitWatcher.Client/wwwroot/appsettings.json`:
 - `SignalRClient:HubBaseUrl` (по умолчанию `http://localhost:5000`)
