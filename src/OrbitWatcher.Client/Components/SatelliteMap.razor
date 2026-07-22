@@ -19,9 +19,17 @@
     [Parameter]
     public int Zoom { get; set; } = 2;
 
+    [Parameter]
+    public OrbitWatcher.Contracts.GroundTrackDto? GroundTrack { get; set; }
+
+    [Parameter]
+    public EventCallback<uint> OnMarkerClicked { get; set; }
+
     private ElementReference _mapElement;
     private bool _isInitialized;
     private string _resolvedMapId = string.Empty;
+    private DotNetObjectReference<SatelliteMap>? _dotNetRef;
+    private OrbitWatcher.Contracts.GroundTrackDto? _lastRenderedGroundTrack;
 
     protected override void OnInitialized()
     {
@@ -39,7 +47,12 @@
 
         await MapInterop.InitializeAsync(_resolvedMapId, _mapElement, CenterLat, CenterLon, Zoom);
         _isInitialized = true;
+
+        _dotNetRef = DotNetObjectReference.Create(this);
+        await MapInterop.SetMarkerClickCallbackAsync(_resolvedMapId, _dotNetRef, nameof(OnMarkerClickedFromJs));
+
         await SyncMarkersAsync();
+        await SyncGroundTrackAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -50,6 +63,16 @@
         }
 
         await SyncMarkersAsync();
+        await SyncGroundTrackAsync();
+    }
+
+    [Microsoft.JSInterop.JSInvokable]
+    public async Task OnMarkerClickedFromJs(int noradCatId)
+    {
+        if (OnMarkerClicked.HasDelegate)
+        {
+            await OnMarkerClicked.InvokeAsync((uint)noradCatId);
+        }
     }
 
     private async Task SyncMarkersAsync()
@@ -65,13 +88,34 @@
         await MapInterop.RemoveMarkersExceptAsync(_resolvedMapId, noradIds);
     }
 
-    public async ValueTask DisposeAsync()
+    private async Task SyncGroundTrackAsync()
     {
-        if (!_isInitialized)
+        if (ReferenceEquals(GroundTrack, _lastRenderedGroundTrack))
         {
             return;
         }
 
+        _lastRenderedGroundTrack = GroundTrack;
+
+        if (GroundTrack is null)
+        {
+            await MapInterop.ClearGroundTrackAsync(_resolvedMapId);
+        }
+        else
+        {
+            await MapInterop.DrawGroundTrackAsync(_resolvedMapId, GroundTrack);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_isInitialized)
+        {
+            _dotNetRef?.Dispose();
+            return;
+        }
+
         await MapInterop.DisposeMapAsync(_resolvedMapId);
+        _dotNetRef?.Dispose();
     }
 }

@@ -14,10 +14,26 @@
     <p class="text-danger"><strong>Error:</strong> @Stream.LastError</p>
 }
 
-<SatelliteMap Satellites="_satellites.Values.ToArray()" />
+@if (_activeNoradCatId.HasValue)
+{
+    var activeSat = _satellites.GetValueOrDefault(_activeNoradCatId.Value);
+    <p>
+        <strong>Selected:</strong>
+        @(activeSat?.Name ?? "Unknown") (NORAD @_activeNoradCatId.Value)
+        <button class="btn btn-sm btn-outline-secondary ms-2" @onclick="DeselectSatellite">✕</button>
+    </p>
+}
+
+<SatelliteMap Satellites="_satellites.Values.ToArray()"
+             GroundTrack="_groundTrack"
+             OnMarkerClicked="OnMarkerClickedAsync" />
 
 @code {
     private readonly Dictionary<uint, OrbitWatcher.Contracts.SatellitePositionDto> _satellites = [];
+    private uint? _activeNoradCatId;
+    private OrbitWatcher.Contracts.GroundTrackDto? _groundTrack;
+    private System.Threading.Timer? _refreshTimer;
+    private static readonly TimeSpan GroundTrackRefreshInterval = TimeSpan.FromSeconds(30);
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,9 +55,70 @@
 
     private void OnStatusChanged() => _ = InvokeAsync(StateHasChanged);
 
+    private async Task OnMarkerClickedAsync(uint noradCatId)
+    {
+        if (_activeNoradCatId == noradCatId)
+        {
+            return;
+        }
+
+        _activeNoradCatId = noradCatId;
+        await LoadGroundTrackAsync();
+        StartRefreshTimer();
+        StateHasChanged();
+    }
+
+    private void DeselectSatellite()
+    {
+        _activeNoradCatId = null;
+        _groundTrack = null;
+        StopRefreshTimer();
+        StateHasChanged();
+    }
+
+    private async Task LoadGroundTrackAsync()
+    {
+        if (!_activeNoradCatId.HasValue)
+        {
+            _groundTrack = null;
+            return;
+        }
+
+        try
+        {
+            _groundTrack = await Stream.GetGroundTrackAsync(_activeNoradCatId.Value);
+        }
+        catch
+        {
+            _groundTrack = null;
+        }
+    }
+
+    private void StartRefreshTimer()
+    {
+        StopRefreshTimer();
+        _refreshTimer = new System.Threading.Timer(
+            _ => _ = InvokeAsync(async () =>
+            {
+                await LoadGroundTrackAsync();
+                StateHasChanged();
+            }),
+            null,
+            GroundTrackRefreshInterval,
+            GroundTrackRefreshInterval
+        );
+    }
+
+    private void StopRefreshTimer()
+    {
+        _refreshTimer?.Dispose();
+        _refreshTimer = null;
+    }
+
     public void Dispose()
     {
         Stream.PositionsReceived -= OnPositionsReceived;
         Stream.StatusChanged -= OnStatusChanged;
+        StopRefreshTimer();
     }
 }

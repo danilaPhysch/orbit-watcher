@@ -32,6 +32,24 @@ public sealed class LeafletMapInterop(IJSRuntime jsRuntime) : IAsyncDisposable
         await module.InvokeVoidAsync("disposeMap", mapId);
     }
 
+    public async ValueTask DrawGroundTrackAsync(string mapId, GroundTrackDto groundTrack)
+    {
+        var module = await GetModuleAsync();
+        await module.InvokeVoidAsync("drawGroundTrack", mapId, groundTrack.Segments);
+    }
+
+    public async ValueTask ClearGroundTrackAsync(string mapId)
+    {
+        var module = await GetModuleAsync();
+        await module.InvokeVoidAsync("clearGroundTrack", mapId);
+    }
+
+    public async ValueTask SetMarkerClickCallbackAsync<T>(string mapId, DotNetObjectReference<T> dotNetRef, string methodName) where T : class
+    {
+        var module = await GetModuleAsync();
+        await module.InvokeVoidAsync("setMarkerClickCallback", mapId, dotNetRef, methodName);
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_module is null)
