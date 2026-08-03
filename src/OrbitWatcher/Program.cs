@@ -26,6 +26,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddSingleton<SatelliteStorage>();
+builder.Services.AddSingleton<GroundTrackService>();
 builder.Services.AddHostedService<OmmDownloaderHostedService>();
 builder.Services.AddHostedService<SatelliteStreamerHostedService>();
 builder.Services.AddHttpClient<ICelestrackClient, CelestrackClient>();

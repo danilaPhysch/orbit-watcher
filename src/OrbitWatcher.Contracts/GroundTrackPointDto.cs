@@ -1,0 +1,8 @@
+namespace OrbitWatcher.Contracts;
+
+public sealed record GroundTrackPointDto(
+    DateTime TimestampUtc,
+    double Lat,
+    double Lon,
+    double AltKm
+);

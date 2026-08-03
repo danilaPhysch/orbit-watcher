@@ -23,6 +23,22 @@ function buildPopupContent(satellite) {
     return `<strong>${name}</strong><br/>NORAD: ${noradCatId}<br/>Lat: ${formatNumber(lat, 6)}<br/>Lon: ${formatNumber(lon, 6)}<br/>Alt (km): ${formatNumber(altKm, 2)}<br/>UTC: ${timestampUtc}`;
 }
 
+function attachClickHandler(mapState, markerKey, marker) {
+    if (!mapState.clickCallback) {
+        return;
+    }
+
+    marker.on("click", () => {
+        const noradCatId = parseInt(markerKey, 10);
+        if (!isNaN(noradCatId)) {
+            mapState.clickCallback.dotNetRef.invokeMethodAsync(
+                mapState.clickCallback.methodName,
+                noradCatId
+            );
+        }
+    });
+}
+
 export function initializeMap(mapId, element, centerLat, centerLon, zoom) {
     if (mapStates.has(mapId)) {
         return;
@@ -39,7 +55,9 @@ export function initializeMap(mapId, element, centerLat, centerLon, zoom) {
 
     mapStates.set(mapId, {
         map,
-        markers: new Map()
+        markers: new Map(),
+        groundTrackLayers: [],
+        clickCallback: null
     });
 
     setTimeout(() => map.invalidateSize(), 0);
@@ -67,6 +85,7 @@ export function upsertMarkers(mapId, satellites) {
             marker = L.marker([lat, lon]);
             marker.addTo(mapState.map);
             mapState.markers.set(markerKey, marker);
+            attachClickHandler(mapState, markerKey, marker);
         } else {
             marker.setLatLng([lat, lon]);
         }
@@ -92,12 +111,80 @@ export function removeMarkersExcept(mapId, noradIds) {
     }
 }
 
+export function drawGroundTrack(mapId, segments) {
+    const mapState = mapStates.get(mapId);
+    if (!mapState) {
+        return;
+    }
+
+    // Clear existing ground track layers
+    clearGroundTrackLayers(mapState);
+
+    if (!Array.isArray(segments)) {
+        return;
+    }
+
+    for (const segment of segments) {
+        if (!Array.isArray(segment) || segment.length < 2) {
+            continue;
+        }
+
+        const latlngs = segment.map(point => {
+            const lat = getPropertyValue(point, "lat", "Lat");
+            const lon = getPropertyValue(point, "lon", "Lon");
+            return [lat, lon];
+        });
+
+        const polyline = L.polyline(latlngs, {
+            color: "#00ccff",
+            weight: 2,
+            opacity: 0.8,
+            dashArray: null
+        });
+
+        polyline.addTo(mapState.map);
+        mapState.groundTrackLayers.push(polyline);
+    }
+}
+
+export function clearGroundTrack(mapId) {
+    const mapState = mapStates.get(mapId);
+    if (!mapState) {
+        return;
+    }
+
+    clearGroundTrackLayers(mapState);
+}
+
+function clearGroundTrackLayers(mapState) {
+    for (const layer of mapState.groundTrackLayers) {
+        mapState.map.removeLayer(layer);
+    }
+    mapState.groundTrackLayers = [];
+}
+
+export function setMarkerClickCallback(mapId, dotNetRef, methodName) {
+    const mapState = mapStates.get(mapId);
+    if (!mapState) {
+        return;
+    }
+
+    mapState.clickCallback = { dotNetRef, methodName };
+
+    // Attach click handlers to all existing markers
+    for (const [markerKey, marker] of mapState.markers.entries()) {
+        attachClickHandler(mapState, markerKey, marker);
+    }
+}
+
 export function disposeMap(mapId) {
     const mapState = mapStates.get(mapId);
     if (!mapState) {
         return;
     }
 
+    clearGroundTrackLayers(mapState);
     mapState.map.remove();
     mapStates.delete(mapId);
 }
+

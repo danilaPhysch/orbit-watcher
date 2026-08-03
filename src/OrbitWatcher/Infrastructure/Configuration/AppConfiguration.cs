@@ -9,10 +9,14 @@ public static class AppConfiguration
         var satelliteStreamingSettings = ValidateSatelliteStreamingSettings(
             configuration.GetSettings<SatelliteStreamingSettings>("SatelliteStreaming")
         );
+        var groundTrackSettings = ValidateGroundTrackSettings(
+            configuration.GetSettings<GroundTrackSettings>("GroundTrack")
+        );
 
         services.AddSingleton(ommLoadingSettings);
         services.AddSingleton(celestrackSettings);
         services.AddSingleton(satelliteStreamingSettings);
+        services.AddSingleton(groundTrackSettings);
     }
 
     private static OmmLoadingSettings ValidateOmmLoadingSettings(OmmLoadingSettings? settings)
@@ -60,6 +64,30 @@ public static class AppConfiguration
         {
             throw new InvalidOperationException(
                 "Configuration section 'SatelliteStreaming' is invalid: 'ExecuteInterval' must be greater than 00:00:00."
+            );
+        }
+
+        return settings;
+    }
+
+    private static GroundTrackSettings ValidateGroundTrackSettings(GroundTrackSettings? settings)
+    {
+        if (settings is null)
+        {
+            throw new InvalidOperationException("Configuration section 'GroundTrack' is missing or invalid.");
+        }
+
+        if (settings.HalfOrbitFraction <= 0)
+        {
+            throw new InvalidOperationException(
+                "Configuration section 'GroundTrack' is invalid: 'HalfOrbitFraction' must be greater than 0."
+            );
+        }
+
+        if (settings.StepSeconds <= 0)
+        {
+            throw new InvalidOperationException(
+                "Configuration section 'GroundTrack' is invalid: 'StepSeconds' must be greater than 0."
             );
         }
 
