@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using OrbitWatcher.Contracts;
 using OrbitWatcher.Infrastructure.Configuration;
-using OrbitWatcher.SignalR;
 using OrbitWatcher.Storage;
 
 namespace OrbitWatcher.HostedServices;
@@ -50,7 +49,7 @@ public sealed class SatelliteStreamerHostedService(
                 }
 
                 await hubContext.Clients.All.SendAsync(
-                    SatellitesHub.SatellitePositionsEventName,
+                    HubConstants.SatellitePositionsEventName,
                     positions,
                     stoppingToken
                 );
@@ -58,7 +57,7 @@ public sealed class SatelliteStreamerHostedService(
                 logger.LogDebug(
                     "Broadcasted {PositionsCount} satellite positions to hub '{HubRoute}'.",
                     positions.Count,
-                    SatellitesHub.Route
+                    HubConstants.Route
                 );
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

@@ -76,7 +76,7 @@ public sealed class GroundTrackService(
     /// Splits a sequence of ground track points into segments whenever the longitude
     /// jumps across the anti-meridian (±180°). This prevents the "line across the world" artifact.
     /// </summary>
-    private static IReadOnlyList<IReadOnlyList<GroundTrackPointDto>> SplitByAntiMeridian(
+    private static List<IReadOnlyList<GroundTrackPointDto>> SplitByAntiMeridian(
         List<GroundTrackPointDto> points)
     {
         if (points.Count == 0)

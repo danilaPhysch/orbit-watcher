@@ -1,3 +1,4 @@
+using OrbitWatcher.Contracts;
 using OrbitWatcher.HostedServices;
 using OrbitWatcher.Infrastructure.Configuration;
 using OrbitWatcher.SignalR;
@@ -38,6 +39,6 @@ if (app.Environment.IsDevelopment())
     app.UseCors("ClientDevelopment");
 }
 
-app.MapHub<SatellitesHub>(SatellitesHub.Route);
+app.MapHub<SatellitesHub>(HubConstants.Route);
 
 await app.RunAsync();

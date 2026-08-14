@@ -6,9 +6,6 @@ namespace OrbitWatcher.SignalR;
 
 public sealed class SatellitesHub(GroundTrackService groundTrackService) : Hub
 {
-    public const string Route = "/hubs/satellites";
-    public const string SatellitePositionsEventName = "satellitePositions";
-
     /// <summary>
     /// Calculates and returns the ground track (±0.5 orbit) for the specified satellite.
     /// Called by clients via SignalR invocation.

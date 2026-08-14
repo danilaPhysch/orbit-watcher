@@ -79,7 +79,7 @@ public sealed class SatellitePositionsStream(IOptions<SatelliteSignalRSettings> 
             return null;
         }
 
-        return await _connection.InvokeAsync<GroundTrackDto?>("GetGroundTrack", noradCatId, cancellationToken);
+        return await _connection.InvokeAsync<GroundTrackDto?>(HubConstants.GetGroundTrackMethodName, noradCatId, cancellationToken);
     }
 
     public async ValueTask DisposeAsync()
