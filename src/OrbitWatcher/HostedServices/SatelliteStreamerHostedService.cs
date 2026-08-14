@@ -7,7 +7,7 @@ using OrbitWatcher.Storage;
 namespace OrbitWatcher.HostedServices;
 
 public sealed class SatelliteStreamerHostedService(
-    SatelliteStorage satelliteStorage,
+    ISatelliteStorage satelliteStorage,
     IOptions<SatelliteStreamingSettings> options,
     IHubContext<SatellitesHub> hubContext,
     ILogger<SatelliteStreamerHostedService> logger

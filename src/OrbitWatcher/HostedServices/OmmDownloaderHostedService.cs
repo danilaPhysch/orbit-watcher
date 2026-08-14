@@ -9,7 +9,7 @@ namespace OrbitWatcher.HostedServices;
 public sealed class OmmDownloaderHostedService(
     ICelestrackClient celestrackClient,
     IOptions<OmmLoadingSettings> options,
-    SatelliteStorage satelliteStorage,
+    ISatelliteStorage satelliteStorage,
     ILogger<OmmDownloaderHostedService> logger
 ) : BackgroundService
 {

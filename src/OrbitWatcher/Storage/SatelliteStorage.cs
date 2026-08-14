@@ -3,7 +3,7 @@ using SGPdotNET.Observation;
 
 namespace OrbitWatcher.Storage;
 
-public sealed class SatelliteStorage
+public sealed class SatelliteStorage : ISatelliteStorage
 {
     private SatelliteSnapshot _snapshot = SatelliteSnapshot.Empty;
 

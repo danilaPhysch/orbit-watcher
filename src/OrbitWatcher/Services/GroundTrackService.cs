@@ -6,7 +6,7 @@ using OrbitWatcher.Storage;
 namespace OrbitWatcher.Services;
 
 public sealed class GroundTrackService(
-    SatelliteStorage satelliteStorage,
+    ISatelliteStorage satelliteStorage,
     IOptions<GroundTrackSettings> options,
     ILogger<GroundTrackService> logger
 )
