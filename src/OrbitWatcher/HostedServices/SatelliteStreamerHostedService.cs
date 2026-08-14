@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using OrbitWatcher.Contracts;
 using OrbitWatcher.Infrastructure.Configuration;
+using OrbitWatcher.SignalR;
 using OrbitWatcher.Storage;
 
 namespace OrbitWatcher.HostedServices;
