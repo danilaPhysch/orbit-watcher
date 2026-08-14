@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using OrbitWatcher.Infrastructure.Configuration;
 using OrbitWatcher.Services;
 using OrbitWatcher.Storage;
@@ -7,16 +8,17 @@ namespace OrbitWatcher.HostedServices;
 
 public sealed class OmmDownloaderHostedService(
     ICelestrackClient celestrackClient,
-    OmmLoadingSettings settings,
-    SatelliteStorage satelliteStorage,
+    IOptions<OmmLoadingSettings> options,
+    ISatelliteStorage satelliteStorage,
     ILogger<OmmDownloaderHostedService> logger
 ) : BackgroundService
 {
+    private readonly OmmLoadingSettings _settings = options.Value;
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("OMM downloader background service is starting.");
 
-        using var timer = new PeriodicTimer(settings.ExecuteInterval);
+        using var timer = new PeriodicTimer(_settings.ExecuteInterval);
 
         do
         {
@@ -35,16 +37,13 @@ public sealed class OmmDownloaderHostedService(
                 var satellitesByNoradCatId = new Dictionary<uint, Satellite>(ommData.Count);
                 foreach (var omm in ommData)
                 {
-                    if (satellitesByNoradCatId.ContainsKey(omm.NoradCatID))
+                    if (!satellitesByNoradCatId.TryAdd(omm.NoradCatID, new Satellite(omm)))
                     {
                         logger.LogWarning(
                             "OMM download contains duplicate NORAD catalog ID '{NoradCatId}'. Keeping the first occurrence and ignoring subsequent duplicates.",
                             omm.NoradCatID
                         );
-                        continue;
                     }
-
-                    satellitesByNoradCatId.Add(omm.NoradCatID, new Satellite(omm));
                 }
 
                 satelliteStorage.ReplaceAll(satellitesByNoradCatId);

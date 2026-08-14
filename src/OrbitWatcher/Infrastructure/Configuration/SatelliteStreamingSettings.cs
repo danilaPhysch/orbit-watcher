@@ -1,6 +1,6 @@
 namespace OrbitWatcher.Infrastructure.Configuration;
 
-public class SatelliteStreamingSettings
+public sealed class SatelliteStreamingSettings
 {
     public required TimeSpan ExecuteInterval { get; init; }
 }

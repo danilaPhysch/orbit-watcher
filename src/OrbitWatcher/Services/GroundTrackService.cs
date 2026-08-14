@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using OrbitWatcher.Contracts;
 using OrbitWatcher.Infrastructure.Configuration;
 using OrbitWatcher.Storage;
@@ -5,11 +6,12 @@ using OrbitWatcher.Storage;
 namespace OrbitWatcher.Services;
 
 public sealed class GroundTrackService(
-    SatelliteStorage satelliteStorage,
-    GroundTrackSettings settings,
+    ISatelliteStorage satelliteStorage,
+    IOptions<GroundTrackSettings> options,
     ILogger<GroundTrackService> logger
 )
 {
+    private readonly GroundTrackSettings _settings = options.Value;
     private const double MinutesPerDay = 1440.0;
 
     /// <summary>
@@ -37,11 +39,11 @@ public sealed class GroundTrackService(
         }
 
         var orbitalPeriodMinutes = MinutesPerDay / meanMotionRevPerDay;
-        var halfWindowMinutes = orbitalPeriodMinutes * settings.HalfOrbitFraction;
+        var halfWindowMinutes = orbitalPeriodMinutes * _settings.HalfOrbitFraction;
 
         var startTime = timestampUtc.AddMinutes(-halfWindowMinutes);
         var endTime = timestampUtc.AddMinutes(halfWindowMinutes);
-        var step = TimeSpan.FromSeconds(settings.StepSeconds);
+        var step = TimeSpan.FromSeconds(_settings.StepSeconds);
 
         var allPoints = new List<GroundTrackPointDto>();
 
@@ -76,7 +78,7 @@ public sealed class GroundTrackService(
     /// Splits a sequence of ground track points into segments whenever the longitude
     /// jumps across the anti-meridian (±180°). This prevents the "line across the world" artifact.
     /// </summary>
-    private static IReadOnlyList<IReadOnlyList<GroundTrackPointDto>> SplitByAntiMeridian(
+    private static List<IReadOnlyList<GroundTrackPointDto>> SplitByAntiMeridian(
         List<GroundTrackPointDto> points)
     {
         if (points.Count == 0)

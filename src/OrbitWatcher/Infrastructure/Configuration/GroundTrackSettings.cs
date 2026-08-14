@@ -1,6 +1,6 @@
 namespace OrbitWatcher.Infrastructure.Configuration;
 
-public class GroundTrackSettings
+public sealed class GroundTrackSettings
 {
     /// <summary>
     /// Fraction of the orbital period to show before and after the current time.

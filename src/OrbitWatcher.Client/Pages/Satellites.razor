@@ -1,18 +1,18 @@
 @page "/"
 @page "/satellites"
 @implements IDisposable
-@inject OrbitWatcher.Client.Services.SatellitePositionsStream Stream
+@inject OrbitWatcher.Client.Services.SatelliteStateService SatelliteState
 
 <PageTitle>Satellites</PageTitle>
 
 <h1>Satellite positions</h1>
 
-<p><strong>Connection:</strong> @Stream.Status</p>
-<p><strong>Last update (UTC):</strong> @(Stream.LastUpdateUtc?.ToString("O") ?? "—")</p>
+<p><strong>Connection:</strong> @SatelliteState.Stream.Status</p>
+<p><strong>Last update (UTC):</strong> @(SatelliteState.Stream.LastUpdateUtc?.ToString("O") ?? "—")</p>
 
-@if (!string.IsNullOrWhiteSpace(Stream.LastError))
+@if (!string.IsNullOrWhiteSpace(SatelliteState.Stream.LastError))
 {
-    <p class="text-danger"><strong>Error:</strong> @Stream.LastError</p>
+    <p class="text-danger"><strong>Error:</strong> @SatelliteState.Stream.LastError</p>
 }
 
 <table class="table">
@@ -27,7 +27,7 @@
     </tr>
     </thead>
     <tbody>
-    @foreach (var satellite in _satellites.Values.OrderBy(x => x.NoradCatId))
+    @foreach (var satellite in SatelliteState.Satellites.Values.OrderBy(x => x.NoradCatId))
     {
         <tr>
             <td>@satellite.NoradCatId</td>
@@ -42,31 +42,16 @@
 </table>
 
 @code {
-    private readonly Dictionary<uint, OrbitWatcher.Contracts.SatellitePositionDto> _satellites = [];
-
     protected override async Task OnInitializedAsync()
     {
-        Stream.PositionsReceived += OnPositionsReceived;
-        Stream.StatusChanged += OnStatusChanged;
-
-        await Stream.StartAsync();
+        SatelliteState.StateChanged += OnStateChanged;
+        await SatelliteState.EnsureStartedAsync();
     }
 
-    private void OnPositionsReceived(IReadOnlyCollection<OrbitWatcher.Contracts.SatellitePositionDto> positions)
-    {
-        foreach (var satellite in positions)
-        {
-            _satellites[satellite.NoradCatId] = satellite;
-        }
-
-        _ = InvokeAsync(StateHasChanged);
-    }
-
-    private void OnStatusChanged() => _ = InvokeAsync(StateHasChanged);
+    private void OnStateChanged() => _ = InvokeAsync(StateHasChanged);
 
     public void Dispose()
     {
-        Stream.PositionsReceived -= OnPositionsReceived;
-        Stream.StatusChanged -= OnStatusChanged;
+        SatelliteState.StateChanged -= OnStateChanged;
     }
 }

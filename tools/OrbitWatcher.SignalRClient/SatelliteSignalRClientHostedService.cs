@@ -1,25 +1,10 @@
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OrbitWatcher.Contracts;
 
-var builder = Host.CreateApplicationBuilder(
-    new HostApplicationBuilderSettings
-    {
-        Args = args,
-        ContentRootPath = AppContext.BaseDirectory
-    }
-);
-builder.Logging.AddSimpleConsole(options =>
-{
-    options.SingleLine = true;
-    options.TimestampFormat = "HH:mm:ss ";
-});
-builder.Services.AddHostedService<SatelliteSignalRClientHostedService>();
-
-await builder.Build().RunAsync();
+namespace OrbitWatcher.SignalRClient;
 
 internal sealed class SatelliteSignalRClientHostedService(
     IConfiguration configuration,
@@ -177,12 +162,4 @@ internal sealed class SatelliteSignalRClientHostedService(
 
         return settings;
     }
-}
-
-internal sealed record SatelliteSignalRClientSettings
-{
-    public required string HubUrl { get; init; }
-    public string EventName { get; init; } = "satellitePositions";
-    public int MinBatchesToLog { get; init; } = 10;
-    public TimeSpan ReconnectDelay { get; init; } = TimeSpan.FromSeconds(5);
 }

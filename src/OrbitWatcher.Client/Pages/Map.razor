@@ -1,22 +1,23 @@
 @page "/map"
 @implements IDisposable
-@inject OrbitWatcher.Client.Services.SatellitePositionsStream Stream
+@inject OrbitWatcher.Client.Services.SatelliteStateService SatelliteState
+@inject ILogger<OrbitWatcher.Client.Pages.Map> Logger
 
 <PageTitle>Map</PageTitle>
 
 <h1>Satellite map</h1>
 
-<p><strong>Connection:</strong> @Stream.Status</p>
-<p><strong>Last update (UTC):</strong> @(Stream.LastUpdateUtc?.ToString("O") ?? "—")</p>
+<p><strong>Connection:</strong> @SatelliteState.Stream.Status</p>
+<p><strong>Last update (UTC):</strong> @(SatelliteState.Stream.LastUpdateUtc?.ToString("O") ?? "—")</p>
 
-@if (!string.IsNullOrWhiteSpace(Stream.LastError))
+@if (!string.IsNullOrWhiteSpace(SatelliteState.Stream.LastError))
 {
-    <p class="text-danger"><strong>Error:</strong> @Stream.LastError</p>
+    <p class="text-danger"><strong>Error:</strong> @SatelliteState.Stream.LastError</p>
 }
 
 @if (_activeNoradCatId.HasValue)
 {
-    var activeSat = _satellites.GetValueOrDefault(_activeNoradCatId.Value);
+    var activeSat = SatelliteState.Satellites.GetValueOrDefault(_activeNoradCatId.Value);
     <p>
         <strong>Selected:</strong>
         @(activeSat?.Name ?? "Unknown") (NORAD @_activeNoradCatId.Value)
@@ -24,36 +25,30 @@
     </p>
 }
 
-<SatelliteMap Satellites="_satellites.Values.ToArray()"
+@if (!string.IsNullOrWhiteSpace(_groundTrackError))
+{
+    <p class="text-warning"><strong>Ground track error:</strong> @_groundTrackError</p>
+}
+
+<SatelliteMap Satellites="SatelliteState.Satellites.Values.ToArray()"
              GroundTrack="_groundTrack"
              OnMarkerClicked="OnMarkerClickedAsync" />
 
 @code {
-    private readonly Dictionary<uint, OrbitWatcher.Contracts.SatellitePositionDto> _satellites = [];
     private uint? _activeNoradCatId;
     private OrbitWatcher.Contracts.GroundTrackDto? _groundTrack;
+    private string? _groundTrackError;
     private System.Threading.Timer? _refreshTimer;
+    private bool _isRefreshing;
     private static readonly TimeSpan GroundTrackRefreshInterval = TimeSpan.FromSeconds(30);
 
     protected override async Task OnInitializedAsync()
     {
-        Stream.PositionsReceived += OnPositionsReceived;
-        Stream.StatusChanged += OnStatusChanged;
-
-        await Stream.StartAsync();
+        SatelliteState.StateChanged += OnStateChanged;
+        await SatelliteState.EnsureStartedAsync();
     }
 
-    private void OnPositionsReceived(IReadOnlyCollection<OrbitWatcher.Contracts.SatellitePositionDto> positions)
-    {
-        foreach (var satellite in positions)
-        {
-            _satellites[satellite.NoradCatId] = satellite;
-        }
-
-        _ = InvokeAsync(StateHasChanged);
-    }
-
-    private void OnStatusChanged() => _ = InvokeAsync(StateHasChanged);
+    private void OnStateChanged() => _ = InvokeAsync(StateHasChanged);
 
     private async Task OnMarkerClickedAsync(uint noradCatId)
     {
@@ -72,6 +67,7 @@
     {
         _activeNoradCatId = null;
         _groundTrack = null;
+        _groundTrackError = null;
         StopRefreshTimer();
         StateHasChanged();
     }
@@ -81,16 +77,20 @@
         if (!_activeNoradCatId.HasValue)
         {
             _groundTrack = null;
+            _groundTrackError = null;
             return;
         }
 
         try
         {
-            _groundTrack = await Stream.GetGroundTrackAsync(_activeNoradCatId.Value);
+            _groundTrack = await SatelliteState.Stream.GetGroundTrackAsync(_activeNoradCatId.Value);
+            _groundTrackError = null;
         }
-        catch
+        catch (Exception ex)
         {
             _groundTrack = null;
+            _groundTrackError = ex.Message;
+            Logger.LogWarning(ex, "Failed to load ground track for NORAD {NoradCatId}.", _activeNoradCatId.Value);
         }
     }
 
@@ -100,8 +100,17 @@
         _refreshTimer = new System.Threading.Timer(
             _ => _ = InvokeAsync(async () =>
             {
-                await LoadGroundTrackAsync();
-                StateHasChanged();
+                if (_isRefreshing) return;
+                _isRefreshing = true;
+                try
+                {
+                    await LoadGroundTrackAsync();
+                    StateHasChanged();
+                }
+                finally
+                {
+                    _isRefreshing = false;
+                }
             }),
             null,
             GroundTrackRefreshInterval,
@@ -117,8 +126,7 @@
 
     public void Dispose()
     {
-        Stream.PositionsReceived -= OnPositionsReceived;
-        Stream.StatusChanged -= OnStatusChanged;
+        SatelliteState.StateChanged -= OnStateChanged;
         StopRefreshTimer();
     }
 }

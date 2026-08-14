@@ -1,3 +1,4 @@
+using OrbitWatcher.Contracts;
 using OrbitWatcher.HostedServices;
 using OrbitWatcher.Infrastructure.Configuration;
 using OrbitWatcher.SignalR;
@@ -25,7 +26,7 @@ builder.Services.AddCors(options =>
     );
 });
 
-builder.Services.AddSingleton<SatelliteStorage>();
+builder.Services.AddSingleton<ISatelliteStorage, SatelliteStorage>();
 builder.Services.AddSingleton<GroundTrackService>();
 builder.Services.AddHostedService<OmmDownloaderHostedService>();
 builder.Services.AddHostedService<SatelliteStreamerHostedService>();
@@ -38,6 +39,6 @@ if (app.Environment.IsDevelopment())
     app.UseCors("ClientDevelopment");
 }
 
-app.MapHub<SatellitesHub>(SatellitesHub.Route);
+app.MapHub<SatellitesHub>(HubConstants.Route);
 
 await app.RunAsync();
