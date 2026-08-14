@@ -1,20 +1,22 @@
+using Microsoft.Extensions.Options;
 using OrbitWatcher.Infrastructure.Configuration;
 using SGPdotNET.Parsers;
 
 namespace OrbitWatcher.Services;
 
-public sealed class CelestrackClient(HttpClient httpClient, CelestrackSettings celestrackSettings, ILogger<CelestrackClient> logger)
+public sealed class CelestrackClient(HttpClient httpClient, IOptions<CelestrackSettings> options, ILogger<CelestrackClient> logger)
     : ICelestrackClient
 {
     private static readonly OmmJsonParser _parser = new();
+    private readonly CelestrackSettings _settings = options.Value;
 
     public async Task<IReadOnlyCollection<OmmData>> DownloadOmm(CancellationToken cancellationToken)
     {
         List<OmmData> output = [];
 
-        foreach (var relativeUri in celestrackSettings.RelativeUris)
+        foreach (var relativeUri in _settings.RelativeUris)
         {
-            var uri = new Uri(celestrackSettings.BaseUri, relativeUri);
+            var uri = new Uri(_settings.BaseUri, relativeUri);
 
             using var response = await httpClient.GetAsync(uri, cancellationToken);
             if (!response.IsSuccessStatusCode)

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using OrbitWatcher.Contracts;
 using OrbitWatcher.Infrastructure.Configuration;
 using OrbitWatcher.Storage;
@@ -6,10 +7,11 @@ namespace OrbitWatcher.Services;
 
 public sealed class GroundTrackService(
     SatelliteStorage satelliteStorage,
-    GroundTrackSettings settings,
+    IOptions<GroundTrackSettings> options,
     ILogger<GroundTrackService> logger
 )
 {
+    private readonly GroundTrackSettings _settings = options.Value;
     private const double MinutesPerDay = 1440.0;
 
     /// <summary>
@@ -37,11 +39,11 @@ public sealed class GroundTrackService(
         }
 
         var orbitalPeriodMinutes = MinutesPerDay / meanMotionRevPerDay;
-        var halfWindowMinutes = orbitalPeriodMinutes * settings.HalfOrbitFraction;
+        var halfWindowMinutes = orbitalPeriodMinutes * _settings.HalfOrbitFraction;
 
         var startTime = timestampUtc.AddMinutes(-halfWindowMinutes);
         var endTime = timestampUtc.AddMinutes(halfWindowMinutes);
-        var step = TimeSpan.FromSeconds(settings.StepSeconds);
+        var step = TimeSpan.FromSeconds(_settings.StepSeconds);
 
         var allPoints = new List<GroundTrackPointDto>();
 

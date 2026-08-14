@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using OrbitWatcher.Contracts;
 using OrbitWatcher.Infrastructure.Configuration;
 using OrbitWatcher.Storage;
@@ -7,16 +8,17 @@ namespace OrbitWatcher.HostedServices;
 
 public sealed class SatelliteStreamerHostedService(
     SatelliteStorage satelliteStorage,
-    SatelliteStreamingSettings settings,
+    IOptions<SatelliteStreamingSettings> options,
     IHubContext<SatellitesHub> hubContext,
     ILogger<SatelliteStreamerHostedService> logger
 ) : BackgroundService
 {
+    private readonly SatelliteStreamingSettings _settings = options.Value;
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Satellite streamer background service is starting.");
 
-        using var timer = new PeriodicTimer(settings.ExecuteInterval);
+        using var timer = new PeriodicTimer(_settings.ExecuteInterval);
 
         do
         {
