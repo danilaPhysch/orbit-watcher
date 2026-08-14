@@ -10,6 +10,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.Configure<SatelliteSignalRSettings>(
     builder.Configuration.GetSection(SatelliteSignalRSettings.SectionName));
 builder.Services.AddScoped<SatellitePositionsStream>();
+builder.Services.AddScoped<SatelliteStateService>();
 builder.Services.AddScoped<LeafletMapInterop>();
 
 await builder.Build().RunAsync();
