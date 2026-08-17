@@ -20,9 +20,19 @@
     <tr>
         <th>NoradCatId</th>
         <th>Name</th>
+        <th>Constellation</th>
         <th>Lat</th>
         <th>Lon</th>
         <th>AltKm</th>
+        <th>Vx (km/s)</th>
+        <th>Vy (km/s)</th>
+        <th>Vz (km/s)</th>
+        <th>Speed (km/s)</th>
+        <th>Period (min)</th>
+        <th>Incl (°)</th>
+        <th>Ecc</th>
+        <th>Perigee (km)</th>
+        <th>Apogee (km)</th>
         <th>TimestampUtc</th>
     </tr>
     </thead>
@@ -32,9 +42,19 @@
         <tr>
             <td>@satellite.NoradCatId</td>
             <td>@satellite.Name</td>
+            <td>@satellite.Constellation</td>
             <td>@satellite.Lat.ToString("F6")</td>
             <td>@satellite.Lon.ToString("F6")</td>
             <td>@satellite.AltKm.ToString("F2")</td>
+            <td>@satellite.VelocityXKmS.ToString("F3")</td>
+            <td>@satellite.VelocityYKmS.ToString("F3")</td>
+            <td>@satellite.VelocityZKmS.ToString("F3")</td>
+            <td>@satellite.SpeedKmS.ToString("F3")</td>
+            <td>@satellite.OrbitalPeriodMin.ToString("F2")</td>
+            <td>@satellite.InclinationDeg.ToString("F2")</td>
+            <td>@satellite.Eccentricity.ToString("F6")</td>
+            <td>@satellite.PerigeeKm.ToString("F2")</td>
+            <td>@satellite.ApogeeKm.ToString("F2")</td>
             <td>@satellite.TimestampUtc.ToString("O")</td>
         </tr>
     }

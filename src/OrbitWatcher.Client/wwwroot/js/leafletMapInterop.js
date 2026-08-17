@@ -1,5 +1,16 @@
 const mapStates = new Map();
 
+const constellationColors = {
+    "GPS":     "#4285F4",
+    "GLONASS": "#EA4335",
+    "Galileo": "#FBBC04",
+    "BeiDou":  "#34A853",
+    "QZSS":    "#FF6D01",
+    "NavIC":   "#9334E6",
+    "SBAS":    "#E91E8F",
+    "Other":   "#9AA0A6"
+};
+
 function getPropertyValue(source, camelName, pascalName) {
     return source[camelName] ?? source[pascalName];
 }
@@ -15,12 +26,35 @@ function formatNumber(value, digits) {
 function buildPopupContent(satellite) {
     const name = getPropertyValue(satellite, "name", "Name") ?? "Unknown";
     const noradCatId = getPropertyValue(satellite, "noradCatId", "NoradCatId") ?? "—";
+    const constellation = getPropertyValue(satellite, "constellation", "Constellation") ?? "—";
     const lat = getPropertyValue(satellite, "lat", "Lat");
     const lon = getPropertyValue(satellite, "lon", "Lon");
     const altKm = getPropertyValue(satellite, "altKm", "AltKm");
+    const vx = getPropertyValue(satellite, "velocityXKmS", "VelocityXKmS");
+    const vy = getPropertyValue(satellite, "velocityYKmS", "VelocityYKmS");
+    const vz = getPropertyValue(satellite, "velocityZKmS", "VelocityZKmS");
+    const speed = getPropertyValue(satellite, "speedKmS", "SpeedKmS");
+    const period = getPropertyValue(satellite, "orbitalPeriodMin", "OrbitalPeriodMin");
+    const inclination = getPropertyValue(satellite, "inclinationDeg", "InclinationDeg");
+    const eccentricity = getPropertyValue(satellite, "eccentricity", "Eccentricity");
+    const perigee = getPropertyValue(satellite, "perigeeKm", "PerigeeKm");
+    const apogee = getPropertyValue(satellite, "apogeeKm", "ApogeeKm");
     const timestampUtc = getPropertyValue(satellite, "timestampUtc", "TimestampUtc") ?? "—";
 
-    return `<strong>${name}</strong><br/>NORAD: ${noradCatId}<br/>Lat: ${formatNumber(lat, 6)}<br/>Lon: ${formatNumber(lon, 6)}<br/>Alt (km): ${formatNumber(altKm, 2)}<br/>UTC: ${timestampUtc}`;
+    return `<strong>${name}</strong><br/>NORAD: ${noradCatId} · ${constellation}` +
+        `<hr style="margin:4px 0"/>` +
+        `Lat: ${formatNumber(lat, 6)}<br/>Lon: ${formatNumber(lon, 6)}<br/>Alt: ${formatNumber(altKm, 2)} km` +
+        `<hr style="margin:4px 0"/>` +
+        `Vx: ${formatNumber(vx, 3)} km/s<br/>Vy: ${formatNumber(vy, 3)} km/s<br/>Vz: ${formatNumber(vz, 3)} km/s<br/>Speed: ${formatNumber(speed, 3)} km/s` +
+        `<hr style="margin:4px 0"/>` +
+        `Period: ${formatNumber(period, 2)} min<br/>Inclination: ${formatNumber(inclination, 2)}°<br/>Eccentricity: ${formatNumber(eccentricity, 6)}<br/>Perigee: ${formatNumber(perigee, 2)} km<br/>Apogee: ${formatNumber(apogee, 2)} km` +
+        `<hr style="margin:4px 0"/>` +
+        `UTC: ${timestampUtc}`;
+}
+
+function getMarkerColor(satellite) {
+    const constellation = getPropertyValue(satellite, "constellation", "Constellation") ?? "Other";
+    return constellationColors[constellation] || constellationColors["Other"];
 }
 
 function attachClickHandler(mapState, markerKey, marker) {
@@ -79,15 +113,24 @@ export function upsertMarkers(mapId, satellites) {
         }
 
         const markerKey = noradCatId.toString();
+        const color = getMarkerColor(satellite);
         let marker = mapState.markers.get(markerKey);
 
         if (!marker) {
-            marker = L.marker([lat, lon]);
+            marker = L.circleMarker([lat, lon], {
+                radius: 5,
+                fillColor: color,
+                color: "#fff",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.9
+            });
             marker.addTo(mapState.map);
             mapState.markers.set(markerKey, marker);
             attachClickHandler(mapState, markerKey, marker);
         } else {
             marker.setLatLng([lat, lon]);
+            marker.setStyle({ fillColor: color });
         }
 
         marker.bindPopup(buildPopupContent(satellite));
@@ -187,4 +230,3 @@ export function disposeMap(mapId) {
     mapState.map.remove();
     mapStates.delete(mapId);
 }
-

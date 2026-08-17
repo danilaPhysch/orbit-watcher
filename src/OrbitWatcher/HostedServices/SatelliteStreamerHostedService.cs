@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using OrbitWatcher.Contracts;
 using OrbitWatcher.Infrastructure.Configuration;
+using OrbitWatcher.Services;
 using OrbitWatcher.SignalR;
 using OrbitWatcher.Storage;
 
@@ -33,7 +34,8 @@ public sealed class SatelliteStreamerHostedService(
                 {
                     try
                     {
-                        var geodetic = satellite.Predict(timestampUtc).ToGeodetic();
+                        var eci = satellite.Predict(timestampUtc);
+                        var geodetic = eci.ToGeodetic();
                         positions.Add(
                             new SatellitePositionDto(
                                 satellite.Tle.NoradNumber,
@@ -41,7 +43,17 @@ public sealed class SatelliteStreamerHostedService(
                                 timestampUtc,
                                 geodetic.Latitude.Degrees,
                                 geodetic.Longitude.Degrees,
-                                geodetic.Altitude
+                                geodetic.Altitude,
+                                eci.Velocity.X,
+                                eci.Velocity.Y,
+                                eci.Velocity.Z,
+                                eci.Velocity.Length,
+                                satellite.Orbit.Period,
+                                satellite.Orbit.Inclination.Degrees,
+                                satellite.Orbit.Eccentricity,
+                                satellite.Orbit.Perigee,
+                                satellite.Orbit.Apogee,
+                                ConstellationResolver.Resolve(satellite.Name)
                             )
                         );
                     }
