@@ -14,4 +14,29 @@ public sealed class SatellitesHub(GroundTrackService groundTrackService) : Hub
     {
         return groundTrackService.Calculate(noradCatId, DateTime.UtcNow);
     }
+
+    /// <summary>
+    /// Subscribes the client to the specified constellation groups.
+    /// Unsubscribes from any previously subscribed groups not in the new list.
+    /// </summary>
+    public async Task SetSubscriptions(string[] constellations)
+    {
+        var currentSubs = Context.Items["Subscriptions"] as HashSet<string> ?? [];
+        var newSubs = new HashSet<string>(constellations, StringComparer.OrdinalIgnoreCase);
+
+        var toRemove = currentSubs.Except(newSubs).ToList();
+        var toAdd = newSubs.Except(currentSubs).ToList();
+
+        foreach (var group in toRemove)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Constellation_{group}");
+        }
+
+        foreach (var group in toAdd)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"Constellation_{group}");
+        }
+
+        Context.Items["Subscriptions"] = newSubs;
+    }
 }

@@ -31,14 +31,14 @@
 }
 
 <div class="constellation-legend">
-    <span class="legend-item"><span class="legend-dot" style="background:#4285F4"></span>GPS</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#EA4335"></span>GLONASS</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#FBBC04"></span>Galileo</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#34A853"></span>BeiDou</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#FF6D01"></span>QZSS</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#9334E6"></span>NavIC</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#E91E8F"></span>SBAS</span>
-    <span class="legend-item"><span class="legend-dot" style="background:#9AA0A6"></span>Other</span>
+    @foreach (var constellation in _availableConstellations)
+    {
+        var isActive = SatelliteState.Subscriptions.Contains(constellation.Name);
+        var itemClass = isActive ? "legend-item active" : "legend-item inactive";
+        <span class="legend-item-clickable @itemClass" @onclick="() => ToggleConstellationAsync(constellation.Name)">
+            <span class="legend-dot" style="background:@constellation.Color"></span>@constellation.Name
+        </span>
+    }
 </div>
 
 <SatelliteMap Satellites="SatelliteState.Satellites.Values.ToArray()"
@@ -53,6 +53,18 @@
     private bool _isRefreshing;
     private static readonly TimeSpan GroundTrackRefreshInterval = TimeSpan.FromSeconds(30);
 
+    private readonly (string Name, string Color)[] _availableConstellations =
+    {
+        ("GPS", "#4285F4"),
+        ("GLONASS", "#EA4335"),
+        ("Galileo", "#FBBC04"),
+        ("BeiDou", "#34A853"),
+        ("QZSS", "#FF6D01"),
+        ("NavIC", "#9334E6"),
+        ("SBAS", "#E91E8F"),
+        ("Other", "#9AA0A6")
+    };
+
     protected override async Task OnInitializedAsync()
     {
         SatelliteState.StateChanged += OnStateChanged;
@@ -60,6 +72,21 @@
     }
 
     private void OnStateChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private async Task ToggleConstellationAsync(string constellation)
+    {
+        var current = SatelliteState.Subscriptions.ToHashSet();
+        if (current.Contains(constellation))
+        {
+            current.Remove(constellation);
+        }
+        else
+        {
+            current.Add(constellation);
+        }
+
+        await SatelliteState.UpdateSubscriptionsAsync(current);
+    }
 
     private async Task OnMarkerClickedAsync(uint noradCatId)
     {

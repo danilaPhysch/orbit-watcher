@@ -63,11 +63,15 @@ public sealed class SatelliteStreamerHostedService(
                     }
                 }
 
-                await hubContext.Clients.All.SendAsync(
-                    HubConstants.SatellitePositionsEventName,
-                    positions,
-                    stoppingToken
-                );
+                var groups = positions.GroupBy(p => p.Constellation);
+                foreach (var group in groups)
+                {
+                    await hubContext.Clients.Group($"Constellation_{group.Key}").SendAsync(
+                        HubConstants.SatellitePositionsEventName,
+                        group.ToList(),
+                        stoppingToken
+                    );
+                }
 
                 logger.LogDebug(
                     "Broadcasted {PositionsCount} satellite positions to hub '{HubRoute}'.",

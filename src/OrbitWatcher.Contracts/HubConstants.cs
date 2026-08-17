@@ -9,4 +9,5 @@ public static class HubConstants
     public const string Route = "/hubs/satellites";
     public const string SatellitePositionsEventName = "satellitePositions";
     public const string GetGroundTrackMethodName = "GetGroundTrack";
+    public const string SetSubscriptionsMethodName = "SetSubscriptions";
 }
