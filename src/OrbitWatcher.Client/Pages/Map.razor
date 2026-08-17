@@ -30,6 +30,17 @@
     <p class="text-warning"><strong>Ground track error:</strong> @_groundTrackError</p>
 }
 
+<div class="constellation-legend">
+    <span class="legend-item"><span class="legend-dot" style="background:#4285F4"></span>GPS</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#EA4335"></span>GLONASS</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#FBBC04"></span>Galileo</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#34A853"></span>BeiDou</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#FF6D01"></span>QZSS</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#9334E6"></span>NavIC</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#E91E8F"></span>SBAS</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#9AA0A6"></span>Other</span>
+</div>
+
 <SatelliteMap Satellites="SatelliteState.Satellites.Values.ToArray()"
              GroundTrack="_groundTrack"
              OnMarkerClicked="OnMarkerClickedAsync" />

@@ -6,5 +6,15 @@ public sealed record SatellitePositionDto(
     DateTime TimestampUtc,
     double Lat,
     double Lon,
-    double AltKm
+    double AltKm,
+    double VelocityXKmS,
+    double VelocityYKmS,
+    double VelocityZKmS,
+    double SpeedKmS,
+    double OrbitalPeriodMin,
+    double InclinationDeg,
+    double Eccentricity,
+    double PerigeeKm,
+    double ApogeeKm,
+    string Constellation
 );
