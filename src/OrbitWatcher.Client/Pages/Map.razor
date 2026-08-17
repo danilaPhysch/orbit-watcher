@@ -8,7 +8,7 @@
 <h1>Satellite map</h1>
 
 <p><strong>Connection:</strong> @SatelliteState.Stream.Status</p>
-<p><strong>Last update (UTC):</strong> @(SatelliteState.Stream.LastUpdateUtc?.ToString("O") ?? "—")</p>
+<p><strong>Last update (Local):</strong> @(SatelliteState.Stream.LastUpdateUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</p>
 
 @if (!string.IsNullOrWhiteSpace(SatelliteState.Stream.LastError))
 {

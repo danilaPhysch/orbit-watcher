@@ -8,7 +8,7 @@
 <h1>Satellite positions</h1>
 
 <p><strong>Connection:</strong> @SatelliteState.Stream.Status</p>
-<p><strong>Last update (UTC):</strong> @(SatelliteState.Stream.LastUpdateUtc?.ToString("O") ?? "—")</p>
+<p><strong>Last update (Local):</strong> @(SatelliteState.Stream.LastUpdateUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</p>
 
 @if (!string.IsNullOrWhiteSpace(SatelliteState.Stream.LastError))
 {
@@ -33,7 +33,7 @@
         <th>Ecc</th>
         <th>Perigee (km)</th>
         <th>Apogee (km)</th>
-        <th>TimestampUtc</th>
+        <th>Timestamp (Local)</th>
     </tr>
     </thead>
     <tbody>
@@ -55,7 +55,7 @@
             <td>@satellite.Eccentricity.ToString("F6")</td>
             <td>@satellite.PerigeeKm.ToString("F2")</td>
             <td>@satellite.ApogeeKm.ToString("F2")</td>
-            <td>@satellite.TimestampUtc.ToString("O")</td>
+            <td>@satellite.TimestampUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
         </tr>
     }
     </tbody>

@@ -23,6 +23,15 @@ function formatNumber(value, digits) {
     return value.toFixed(digits);
 }
 
+function formatLocalTime(utcString) {
+    if (!utcString || utcString === "—") return "—";
+    const d = new Date(utcString);
+    if (isNaN(d)) return utcString;
+    
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 function buildPopupContent(satellite) {
     const name = getPropertyValue(satellite, "name", "Name") ?? "Unknown";
     const noradCatId = getPropertyValue(satellite, "noradCatId", "NoradCatId") ?? "—";
@@ -49,7 +58,7 @@ function buildPopupContent(satellite) {
         `<hr style="margin:4px 0"/>` +
         `Period: ${formatNumber(period, 2)} min<br/>Inclination: ${formatNumber(inclination, 2)}°<br/>Eccentricity: ${formatNumber(eccentricity, 6)}<br/>Perigee: ${formatNumber(perigee, 2)} km<br/>Apogee: ${formatNumber(apogee, 2)} km` +
         `<hr style="margin:4px 0"/>` +
-        `UTC: ${timestampUtc}`;
+        `Local: ${formatLocalTime(timestampUtc)}`;
 }
 
 function getMarkerColor(satellite) {
