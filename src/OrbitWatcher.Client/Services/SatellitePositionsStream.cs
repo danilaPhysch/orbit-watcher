@@ -8,6 +8,7 @@ public sealed class SatellitePositionsStream(IOptions<SatelliteSignalRSettings> 
 {
     private readonly SatelliteSignalRSettings _settings = options.Value;
     private HubConnection? _connection;
+    private IReadOnlyCollection<string>? _currentSubscriptions;
 
     public event Action<IReadOnlyCollection<SatellitePositionDto>>? PositionsReceived;
     public event Action? StatusChanged;
@@ -45,11 +46,21 @@ public sealed class SatellitePositionsStream(IOptions<SatelliteSignalRSettings> 
             return Task.CompletedTask;
         };
 
-        connection.Reconnected += _ =>
+        connection.Reconnected += async _ =>
         {
             LastError = null;
             SetStatus(SatelliteConnectionStatus.Connected);
-            return Task.CompletedTask;
+            if (_currentSubscriptions is not null)
+            {
+                try
+                {
+                    await connection.InvokeAsync(HubConstants.SetSubscriptionsMethodName, _currentSubscriptions);
+                }
+                catch (Exception ex)
+                {
+                    LastError = $"Failed to restore subscriptions: {ex.Message}";
+                }
+            }
         };
 
         connection.Closed += error =>
@@ -64,6 +75,18 @@ public sealed class SatellitePositionsStream(IOptions<SatelliteSignalRSettings> 
             SetStatus(SatelliteConnectionStatus.Connecting);
             await connection.StartAsync(cancellationToken);
             SetStatus(SatelliteConnectionStatus.Connected);
+
+            if (_currentSubscriptions is not null)
+            {
+                try
+                {
+                    await connection.InvokeAsync(HubConstants.SetSubscriptionsMethodName, _currentSubscriptions, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    LastError = $"Failed to send initial subscriptions: {ex.Message}";
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -80,6 +103,16 @@ public sealed class SatellitePositionsStream(IOptions<SatelliteSignalRSettings> 
         }
 
         return await _connection.InvokeAsync<GroundTrackDto?>(HubConstants.GetGroundTrackMethodName, noradCatId, cancellationToken);
+    }
+
+    public async Task SetSubscriptionsAsync(IReadOnlyCollection<string> constellations, CancellationToken cancellationToken = default)
+    {
+        _currentSubscriptions = constellations;
+
+        if (_connection?.State == HubConnectionState.Connected)
+        {
+            await _connection.InvokeAsync(HubConstants.SetSubscriptionsMethodName, constellations, cancellationToken);
+        }
     }
 
     public async ValueTask DisposeAsync()
