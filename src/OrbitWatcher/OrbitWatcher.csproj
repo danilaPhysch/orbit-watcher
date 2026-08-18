@@ -12,5 +12,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OrbitWatcher.Contracts\OrbitWatcher.Contracts.csproj" />
+    <ProjectReference Include="..\OrbitWatch.ServiceDefaults\OrbitWatch.ServiceDefaults.csproj" />
   </ItemGroup>
 </Project>

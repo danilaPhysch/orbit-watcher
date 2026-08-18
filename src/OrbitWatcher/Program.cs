@@ -6,6 +6,7 @@ using OrbitWatcher.Services;
 using OrbitWatcher.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 
 builder.Services.RegisterSettings(builder.Configuration);
 builder.Services.AddSignalR();
@@ -33,6 +34,7 @@ builder.Services.AddHostedService<SatelliteStreamerHostedService>();
 builder.Services.AddHttpClient<ICelestrackClient, CelestrackClient>();
 
 var app = builder.Build();
+app.MapDefaultEndpoints();
 
 if (app.Environment.IsDevelopment())
 {
